@@ -41,8 +41,8 @@ modules:
         dest: packaging
       - type: file
         path: ../../build/appicon.png
-        dest: build/appicon.png
+        dest: build
       - type: file
         path: ../../medictd
-        dest: medictd
+        dest: .
 

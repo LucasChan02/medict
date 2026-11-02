@@ -63,7 +63,7 @@ jobs:
         with:
           version: '6.8.3'
           arch: linux_gcc_64
-          modules: 'qtwebengine'
+          modules: 'qtwebengine qtwebchannel qtpositioning'
           cache: true
 
       - name: Build dictionary backend
@@ -81,7 +81,7 @@ jobs:
 
   qt-windows:
     name: Qt client (Windows)
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: Checkout
         uses: actions/checkout@v4
