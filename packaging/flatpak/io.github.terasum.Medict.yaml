@@ -5,6 +5,7 @@ sdk: org.kde.Sdk
 base: io.qt.qtwebengine.BaseApp
 base-version: "6.10"
 command: medict
+appstream-compose: false
 
 finish-args:
   - --share=network
