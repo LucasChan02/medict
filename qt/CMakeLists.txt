@@ -66,8 +66,8 @@ else()
     endif()
     install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/linux/io.github.terasum.Medict.desktop"
         DESTINATION share/applications)
-    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../build/appicon.png"
-        DESTINATION share/icons/hicolor/1024x1024/apps
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/linux/io.github.terasum.Medict.png"
+        DESTINATION share/icons/hicolor/512x512/apps
         RENAME io.github.terasum.Medict.png)
     install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/linux/io.github.terasum.Medict.metainfo.xml"
         DESTINATION share/metainfo)
