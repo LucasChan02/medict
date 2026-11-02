@@ -188,12 +188,12 @@ void ApiClient::consumeStandardOutput()
             return;
         }
 
-        const QJsonObject ready = document.object();
-        m_token = ready.value(QStringLiteral("token")).toString();
-        m_staticBaseUrl = ready.value(QStringLiteral("url")).toString();
-        m_apiBaseUrl = ready.value(QStringLiteral("apiUrl")).toString();
-        m_configDir = ready.value(QStringLiteral("configDir")).toString();
-        m_backendVersion = ready.value(QStringLiteral("version")).toString();
+        const QJsonObject readyMessage = document.object();
+        m_token = readyMessage.value(QStringLiteral("token")).toString();
+        m_staticBaseUrl = readyMessage.value(QStringLiteral("url")).toString();
+        m_apiBaseUrl = readyMessage.value(QStringLiteral("apiUrl")).toString();
+        m_configDir = readyMessage.value(QStringLiteral("configDir")).toString();
+        m_backendVersion = readyMessage.value(QStringLiteral("version")).toString();
         if (m_token.isEmpty() || m_staticBaseUrl.isEmpty() || m_apiBaseUrl.isEmpty()) {
             m_failureReported = true;
             emit failed(tr("The backend ready message is incomplete."));
