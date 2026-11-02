@@ -20,6 +20,7 @@ require (
 	github.com/spf13/viper v1.10.1
 	github.com/syndtr/goleveldb v1.0.0
 	go.etcd.io/etcd/client/pkg/v3 v3.5.1
+	golang.org/x/sys v0.45.0
 	golang.org/x/text v0.37.0
 	modernc.org/sqlite v1.53.0
 )
@@ -85,7 +86,6 @@ require (
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.52.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect

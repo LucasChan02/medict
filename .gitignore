@@ -87,6 +87,21 @@ out/
 libdict/
 testdict/
 /build/bin/
+/build/medictd
+/build/medictd.exe
+/build/qt/
+/qt-build/
+/stage/
+/dist/
+/AppDir/
+/repo/
+/builddir/
+/.flatpak-builder/
+/medictd
+/medictd.exe
+/linuxdeploy-*.AppImage
+/appimagetool-*.AppImage
+*.flatpak
 .idea
 
 *.mdx

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.terasum.Medict</id>
+  <name>Medict</name>
+  <summary>Offline dictionary for MDict and StarDict files</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <description>
+    <p>
+      Medict reads MDict and StarDict dictionaries on the local computer.
+      It supports multi-dictionary lookup, vocabulary notebooks, Anki export,
+      and per-dictionary CSS.
+    </p>
+    <p>
+      The application includes a compact English-Chinese dictionary.
+      Users can install the complete ECDICT data for offline lookup.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.terasum.Medict.desktop</launchable>
+  <url type="homepage">https://github.com/terasum/medict</url>
+  <url type="bugtracker">https://github.com/terasum/medict/issues</url>
+  <developer id="io.github.terasum">
+    <name>Medict contributors</name>
+  </developer>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="4.0.0" date="2026-11-02"/>
+  </releases>
+</component>
+

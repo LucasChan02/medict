@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Medict
+GenericName=Dictionary
+Comment=Offline dictionary for MDict and StarDict files
+Exec=medict %U
+Icon=io.github.terasum.Medict
+Terminal=false
+Categories=Education;Dictionary;
+Keywords=dictionary;mdict;stardict;english;chinese;
+StartupNotify=true
+StartupWMClass=medict
+

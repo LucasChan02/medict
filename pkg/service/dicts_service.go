@@ -189,7 +189,10 @@ func (ds *DictService) GetDictPlain(id string) (*model.PlainDictionaryItem, bool
 	defer ds.dictLock.Unlock()
 
 	dict, ok := ds.dicts[id]
-	return dict.ToPlain(), ok
+	if !ok {
+		return nil, false
+	}
+	return dict.ToPlain(), true
 }
 
 func (ds *DictService) Lookup(dictId string, keyword string) ([]byte, error) {

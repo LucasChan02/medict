@@ -1,0 +1,48 @@
+app-id: io.github.terasum.Medict
+runtime: org.kde.Platform
+runtime-version: "6.10"
+sdk: org.kde.Sdk
+base: io.qt.qtwebengine.BaseApp
+base-version: "6.10"
+command: medict
+
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --device=dri
+  - --filesystem=home
+  - --env=QTWEBENGINEPROCESS_PATH=/app/bin/QtWebEngineProcess
+  - --env=QTWEBENGINE_DICTIONARIES_PATH=/app/qtwebengine_dictionaries
+
+cleanup-commands:
+  - /app/cleanup-BaseApp.sh
+
+modules:
+  - name: medict
+    buildsystem: simple
+    build-commands:
+      - cmake -S qt -B qt-build -G Ninja
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_INSTALL_PREFIX=/app
+        -DCMAKE_PREFIX_PATH=/app
+        -DMEDICT_BACKEND_BINARY=/run/build/medict/medictd
+        -DMEDICT_VERSION=4.0.0
+      - cmake --build qt-build --parallel
+      - cmake --install qt-build
+    sources:
+      - type: dir
+        path: ../../qt
+        dest: qt
+      - type: dir
+        path: ../../packaging
+        dest: packaging
+      - type: file
+        path: ../../build/appicon.png
+        dest: build/appicon.png
+      - type: file
+        path: ../../medictd
+        dest: medictd
+

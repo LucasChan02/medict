@@ -1,10 +1,7 @@
 name: Release
 
-# Releasing: push a `v*` tag (e.g. `git tag v3.1.0 && git push --tags`) and the
-# three-platform build + GitHub Release runs automatically. To validate without
-# publishing, use "Run workflow" in the Actions UI (workflow_dispatch) — it
-# produces a DRAFT release tagged with whatever label you enter, which you can
-# inspect and delete.
+# Push a v* tag to publish a release. Run the workflow manually to make a
+# draft release for inspection without publishing it.
 on:
   push:
     tags:
@@ -12,141 +9,281 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version label for artifacts (e.g. v3.1.0-rc1). A DRAFT release is created — no published release, safe to delete.'
+        description: 'Release tag for a draft build, for example v4.0.0-rc1'
         required: true
         default: 'v0.0.0-dryrun'
 
-# softprops/action-gh-release needs to create the release + tag.
 permissions:
   contents: write
 
-# On a tag push GITHUB_REF_NAME is the tag (e.g. v3.1.0). On workflow_dispatch
-# we use the input. Either way this is both the artifact label and the tag.
 env:
   VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
 
 jobs:
-  build:
-    name: Build (${{ matrix.name }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { runner: macos-14,      target: darwin/universal, name: Darwin_universal }
-          - { runner: ubuntu-22.04,  target: linux/amd64,      name: Linux_x86_64 }
-          - { runner: windows-latest, target: windows/amd64,   name: Windows_x86_64 }
-    runs-on: ${{ matrix.runner }}
+  windows:
+    name: Windows EXE
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Go
+      - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.25.x'
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Set up Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          arch: win64_msvc2022_64
+          modules: 'qtwebengine'
+          cache: true
 
-      - name: Install Wails CLI
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
-      - name: Install Linux build deps
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
-
-      # main.Version is the app version var (main.go), injected via ldflags on
-      # every platform. Defaults to "dev" when unset.
-      - name: Build (Wails)
-        shell: bash
-        run: wails build -platform ${{ matrix.target }} -ldflags "-X main.Version=${{ env.VERSION }}"
-
-      # ---- macOS: always ship a zipped .app; dmg is best-effort ----
-      # Write the .zip to the repo root (GITHUB_WORKSPACE), same as the .dmg /
-      # .tar.gz / Windows .zip, so the shared upload-artifact step picks it up.
-      - name: Package macOS (.app zip)
-        if: runner.os == 'macOS'
-        run: |
-          ditto -c -k --keepParent build/bin/Medict.app "Medict_${{ env.VERSION }}_${{ matrix.name }}.zip"
-
-      - name: Package macOS (.dmg)
-        if: runner.os == 'macOS'
-        continue-on-error: true
-        run: |
-          brew install create-dmg
-          create-dmg \
-            --volname "Medict" \
-            --volicon "build/assets/darwin/dmg_icon.icns" \
-            --background "build/assets/darwin/dmg_bg.png" \
-            --window-size 512 360 --icon-size 100 \
-            --icon "Medict.app" 100 185 \
-            --hide-extension "Medict.app" \
-            --app-drop-link 388 185 \
-            "Medict_${{ env.VERSION }}_${{ matrix.name }}.dmg" \
-            "build/bin"
-
-      # ---- Linux: tar.gz ----
-      - name: Package Linux
-        if: runner.os == 'Linux'
-        run: tar -C build/bin -czf "Medict_${{ env.VERSION }}_${{ matrix.name }}.tar.gz" Medict
-
-      # ---- Windows: zip ----
-      - name: Package Windows
-        if: runner.os == 'Windows'
+      - name: Build dictionary backend
         shell: pwsh
-        run: Compress-Archive -Path build/bin/Medict.exe -DestinationPath "Medict_${{ env.VERSION }}_${{ matrix.name }}.zip"
+        run: |
+          $packageVersion = $env:VERSION -replace '^v', ''
+          "PACKAGE_VERSION=$packageVersion" >> $env:GITHUB_ENV
+          New-Item -ItemType Directory -Force build | Out-Null
+          go build -trimpath `
+            -ldflags "-s -w -H=windowsgui -X main.Version=$env:VERSION" `
+            -o build/medictd.exe ./cmd/medictd
 
-      - name: Upload artifact
+      - name: Configure Qt client
+        shell: pwsh
+        run: |
+          cmake -S qt -B build/qt -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" `
+            -DMEDICT_BACKEND_BINARY="$PWD/build/medictd.exe" `
+            -DMEDICT_VERSION="$env:PACKAGE_VERSION"
+
+      - name: Build Qt client
+        shell: pwsh
+        run: cmake --build build/qt --config Release --parallel
+
+      - name: Stage application
+        shell: pwsh
+        run: |
+          $stage = Join-Path $PWD 'stage'
+          cmake --install build/qt --config Release --prefix $stage
+          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" `
+            --release `
+            --compiler-runtime `
+            --dir $stage `
+            "$stage\Medict.exe"
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          $stage = (Resolve-Path stage).Path
+          $dist = Join-Path $PWD 'dist'
+          New-Item -ItemType Directory -Force $dist | Out-Null
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
+            "/DMyAppVersion=$env:PACKAGE_VERSION" `
+            "/DStageDir=$stage" `
+            "/DOutputDir=$dist" `
+            "packaging\windows\medict.iss"
+
+      - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: Medict_${{ env.VERSION }}_${{ matrix.name }}
-          path: |
-            Medict_${{ env.VERSION }}_${{ matrix.name }}.zip
-            Medict_${{ env.VERSION }}_${{ matrix.name }}.dmg
-            Medict_${{ env.VERSION }}_${{ matrix.name }}.tar.gz
+          name: Medict-Windows
+          path: dist/*.exe
+          if-no-files-found: error
+
+  linux-appimage:
+    name: Linux AppImage
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            desktop-file-utils \
+            libasound2 \
+            libasound2-dev \
+            libfuse2 \
+            libgl1-mesa-dev \
+            libnss3 \
+            libnss3-dev \
+            libx11-xcb-dev \
+            libxcb-cursor0 \
+            libxcb-cursor-dev \
+            libxcb-icccm4 \
+            libxcb-icccm4-dev \
+            libxcb-image0 \
+            libxcb-image0-dev \
+            libxcb-keysyms1 \
+            libxcb-keysyms1-dev \
+            libxcb-render-util0 \
+            libxcb-render-util0-dev \
+            libxcb-shape0 \
+            libxcb-shape0-dev \
+            libxcb-xinerama0 \
+            libxcb-xinerama0-dev \
+            libxcb-xkb1 \
+            libxcb-xkb-dev \
+            libxkbcommon-dev \
+            libxkbcommon-x11-0 \
+            libxkbcommon-x11-dev \
+            patchelf
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+
+      - name: Set up Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          arch: linux_gcc_64
+          modules: 'qtwebengine'
+          cache: true
+
+      - name: Build dictionary backend
+        run: |
+          export PACKAGE_VERSION="${VERSION#v}"
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
+          mkdir -p build dist AppDir
+          go build -trimpath \
+            -ldflags "-s -w -X main.Version=$VERSION" \
+            -o build/medictd ./cmd/medictd
+
+      - name: Build Qt client
+        run: |
+          cmake -S qt -B build/qt -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" \
+            -DMEDICT_BACKEND_BINARY="$PWD/build/medictd" \
+            -DMEDICT_VERSION="$PACKAGE_VERSION"
+          cmake --build build/qt --parallel
+          DESTDIR="$PWD/AppDir" cmake --install build/qt
+
+      - name: Deploy Qt libraries
+        run: |
+          curl -fL -o linuxdeploy-x86_64.AppImage \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          curl -fL -o linuxdeploy-plugin-qt-x86_64.AppImage \
+            https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          export QMAKE="$QT_ROOT_DIR/bin/qmake"
+          export EXTRA_QT_MODULES="webenginecore"
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt
+
+      - name: Build AppImage
+        run: |
+          install -Dm755 packaging/linux/AppRun AppDir/AppRun
+          curl -fL -o appimagetool-x86_64.AppImage \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool-x86_64.AppImage
+          ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool-x86_64.AppImage \
+            AppDir "dist/Medict-${PACKAGE_VERSION}-x86_64.AppImage"
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: Medict-AppImage
+          path: dist/*.AppImage
+          if-no-files-found: error
+
+  linux-flatpak:
+    name: Linux Flatpak
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Flatpak tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+
+      - name: Build dictionary backend
+        run: |
+          export PACKAGE_VERSION="${VERSION#v}"
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
+          mkdir -p dist
+          go build -trimpath \
+            -ldflags "-s -w -X main.Version=$VERSION" \
+            -o medictd ./cmd/medictd
+
+      - name: Build Flatpak
+        run: |
+          flatpak remote-add --user --if-not-exists flathub \
+            https://flathub.org/repo/flathub.flatpakrepo
+          flatpak-builder \
+            --user \
+            --install-deps-from=flathub \
+            --disable-rofiles-fuse \
+            --repo=repo \
+            --force-clean \
+            builddir \
+            packaging/flatpak/io.github.terasum.Medict.yaml
+          flatpak build-bundle \
+            --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo \
+            repo \
+            "dist/Medict-${PACKAGE_VERSION}-x86_64.flatpak" \
+            io.github.terasum.Medict
+
+      - name: Upload Flatpak
+        uses: actions/upload-artifact@v4
+        with:
+          name: Medict-Flatpak
+          path: dist/*.flatpak
           if-no-files-found: error
 
   release:
     name: Publish release
-    needs: build
+    needs:
+      - windows
+      - linux-appimage
+      - linux-flatpak
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download all build artifacts
+      - name: Download package artifacts
         uses: actions/download-artifact@v4
         with:
           path: assets
           merge-multiple: true
 
-      - name: List artifacts
+      - name: List package artifacts
         run: ls -lhR assets
 
-      # Release notes = the top `## vX.Y.Z` section of CHANGELOG.md (everything
-      # up to the next `## `). Empty if CHANGELOG.md has no matching section.
-      - name: Collect release notes from CHANGELOG.md
+      - name: Collect release notes
         id: notes
         run: |
           {
             echo "body<<EOF"
-            awk '/^## /{c++} c==1{print} c==2{exit}' CHANGELOG.md
+            awk '/^## /{count++} count==1{print} count==2{exit}' CHANGELOG.md
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Create / update GitHub Release
+      - name: Create or update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.VERSION }}
-          name: ${{ env.VERSION }}
+          name: Medict ${{ env.VERSION }}
           body: ${{ steps.notes.outputs.body }}
           files: |
-            assets/*.zip
-            assets/*.dmg
-            assets/*.tar.gz
-          # tag push -> published; manual dispatch -> draft (validation only)
+            assets/*.exe
+            assets/*.AppImage
+            assets/*.flatpak
           draft: ${{ github.event_name == 'workflow_dispatch' }}
-          # v3.1.0 -> stable; v3.1.0-rc1 / v3.1.0-beta -> prerelease
           prerelease: ${{ contains(env.VERSION, '-') }}

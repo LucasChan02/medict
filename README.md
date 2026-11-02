@@ -8,91 +8,106 @@
 [![GitHub Stars](https://img.shields.io/github/stars/terasum/medict?style=flat-square)](https://github.com/terasum/medict/stargazers)
 [![License](https://img.shields.io/github/license/terasum/medict.svg?style=flat-square)](LICENSE)
 
-Medict is an open-source, cross-platform desktop dictionary application with support for MDict (`.mdx` / `.mdd`) and StarDict dictionaries. Built with Wails, Go, and Vue, it provides an offline English-Chinese dictionary, multi-dictionary lookup, vocabulary notebooks, Anki export, and per-dictionary style editing.
+Medict is an offline dictionary application. It reads MDict and StarDict
+dictionaries. The desktop client uses Qt 6 Widgets and Qt WebEngine. A local
+Go process reads the dictionary files and supplies the control API.
 
-The current stable release is **v3.1.13**.
+The current stable release is **v4.0.0**.
 
 ## Features
 
-### Lookup and Reading
+### Lookup
 
-- Supports MDict v1.x / v2.0 `.mdx` and `.mdd` dictionaries, plus StarDict `.ifo`, `.idx`, `.dict`, and `.dict.dz` dictionaries.
-- Includes an offline ECDICT English-Chinese dictionary with about 50,000 high-frequency entries—no account, API key, or network connection required.
-- The complete ECDICT dataset can be downloaded from **Settings → Dictionary Settings** and remains fully available offline after installation.
-- Provides prefix suggestions and fuzzy search, helping users find candidates even when spelling is not exact.
-- Supports both single-dictionary and simultaneous multi-dictionary lookup; the active selection is persisted automatically.
-- Loads dictionary-provided CSS, JavaScript, images, fonts, and audio resources.
-- Supports `entry://` navigation and `@@@LINK=` redirects.
-- Detects words under the pointer, underlines them on hover, and looks them up in the main view when clicked, similar to macOS Dictionary.
-- Supports back, forward, and refresh actions, plus definition zoom through the toolbar, `Cmd/Ctrl + +/-`, or `Cmd/Ctrl + mouse wheel`.
-- Definition zoom ranges from 80% to 160%, applies to single- and multi-dictionary views, and is persisted automatically.
+- Reads MDict v1.x and v2.0 `.mdx` files and their `.mdd` resources.
+- Reads StarDict `.ifo`, `.idx`, `.dict`, and `.dict.dz` files.
+- Includes a compact offline ECDICT English-Chinese dictionary.
+- Downloads the complete ECDICT data from Settings. The download needs network
+  access. Lookup remains offline after the install.
+- Provides prefix suggestions, fuzzy search, and direct lookup.
+- Looks up a word in one dictionary or in all selected dictionaries.
+- Saves the active dictionary selection between sessions.
+- Shows dictionary CSS, JavaScript, images, fonts, and audio in Qt WebEngine.
+- Follows `entry://` links and `@@@LINK=` redirects.
+- Keeps back and forward history.
+- Changes definition zoom from 80% to 160% and saves the setting.
 
-### Dictionary Management
+### Dictionary tools
 
-- Recursively scans the dictionary directory and supports dictionaries referenced through symbolic links.
-- Uses the MDict `Title` or StarDict `bookname` metadata as the display name when available.
-- Prefers dictionary-provided cover artwork and falls back to a shared default icon.
-- Supports creating dictionary groups, managing group members, deleting groups, and marking a favorite group without modifying dictionary files.
-- Provides a standalone CSS editor for each dictionary. Existing dictionary styles are used as the editing base, with live preview and persistent overrides.
-- Exports the current entry as a self-contained HTML file with resources inlined for debugging complex dictionary content.
+- Scans the dictionary folder at startup and on demand.
+- Optionally follows symbolic links.
+- Rebuilds the keyword index for one dictionary.
+- Edits a CSS override for each dictionary.
+- Previews CSS changes in the open definition pages.
+- Exports the current entry as a self-contained HTML file.
 
-### Vocabulary Notebooks
+### Vocabulary notebooks
 
-- Save the current entry by clicking the star while looking up a word.
-- Create, rename, delete, and select a default vocabulary notebook.
-- Stores an offline HTML snapshot when an entry is saved, so definitions remain available even if the source dictionary is later removed.
-- Filter saved words by entry or source dictionary and return directly to lookup from the notebook.
-- Export an entire notebook as an Anki `.apkg`; dictionary images are packaged as Anki media resources.
-
-### Settings and Diagnostics
-
-- Manage the dictionary directory, complete ECDICT dataset, software, theme, and plugin-related preferences in one place.
-- Read the user guide, privacy notice, and open-source license directly inside Settings.
-- Inspect images, CSS, fonts, and audio through the built-in dictionary resource query tool.
-- Access version information, source code, releases, and issue reporting from the About page.
+- Saves the current word to the default notebook.
+- Creates, renames, and deletes notebooks.
+- Sets the default notebook.
+- Keeps an HTML snapshot of each saved entry.
+- Opens a saved word directly from the notebook.
+- Exports all words or one notebook to Anki `.apkg` format.
 
 ## Download
 
-Download the latest stable build from [GitHub Releases](https://github.com/terasum/medict/releases/latest). Every official release is built automatically by GitHub Actions and includes:
+Download the latest release from
+[GitHub Releases](https://github.com/terasum/medict/releases/latest).
+GitHub Actions builds every release package.
 
-| Platform | Artifact |
+| Platform | Package |
 | --- | --- |
-| macOS (Apple Silicon / Intel) | Universal `.dmg` and `.app.zip` |
-| Windows x86_64 | `.zip` |
-| Linux x86_64 | `.tar.gz` |
+| Windows x86_64 | `Medict-4.0.0-Setup.exe` |
+| Linux x86_64 | `Medict-4.0.0-x86_64.AppImage` |
+| Linux x86_64 | `Medict-4.0.0-x86_64.flatpak` |
 
-See [CHANGELOG.md](CHANGELOG.md) for the complete release history.
+### Windows
 
-## What's New in v3.1.13
+Run `Medict-4.0.0-Setup.exe`. The installer does not require administrator
+rights. It installs Medict and the `medictd.exe` dictionary engine.
 
-This release makes the built-in English-Chinese dictionary handle inflected word forms, fixes its multi-sense line rendering, and reclaims vertical space on Windows and Linux.
+### Linux AppImage
 
-### Added
+Make the AppImage executable and run it:
 
-- Inflection fallback for the built-in ECDICT dictionary: searching or clicking an inflected form now falls back to its base form — `parts` → `part`, `studies` → `study`, `boxes` → `box`, irregular verbs (`ran` / `went` / `written`), `-ing` forms (`lying` → `lie`, `running` → `run`), and comparatives (`bigger` → `big`, `happiest` → `happy`). Works in exact lookup, prefix search, and in-entry hyperlink lookups.
-- Platform detection: the frontend queries the host OS via a new `App.Platform()` binding, and on Windows and Linux — where the native title bar cannot be hidden — the in-app title strip shrinks by 12px to reclaim space for dictionary content.
+```bash
+chmod +x Medict-4.0.0-x86_64.AppImage
+./Medict-4.0.0-x86_64.AppImage
+```
 
-### Fixed
+The AppImage includes Qt, Qt WebEngine, and the Go dictionary engine.
+KDE Plasma is the primary Linux desktop target. Other Qt-capable desktops can
+start the application.
 
-- Multi-sense ECDICT definitions rendered as one run-on line with visible `\n` text (10,000+ entries affected). Line breaks now render correctly; no database reinstall is needed.
+Some Linux systems block unprivileged user namespaces. On these systems, the
+definition area can stay empty. Start the AppImage with this command:
 
-See the [v3.1.13 release](https://github.com/terasum/medict/releases/tag/v3.1.13) or read the [complete changelog](CHANGELOG.md).
+```bash
+QTWEBENGINE_DISABLE_SANDBOX=1 ./Medict-4.0.0-x86_64.AppImage
+```
 
-## Roadmap
+This command disables the Qt WebEngine sandbox. Use it only when the default
+start fails.
 
-The following areas are currently planned. Priorities may change based on user feedback and contributions:
+### Linux Flatpak
 
-- [ ] [Full-text search](https://github.com/terasum/medict/issues/787): search inside all definitions instead of matching headwords only.
-- [ ] [Inflection, Simplified/Traditional Chinese, and variant-character fallback](https://github.com/terasum/medict/issues/786): retry a missing lookup using English inflections and Chinese character variants.
-- [ ] [Performance and stability for large dictionaries](https://github.com/terasum/medict/issues/781): continue investigating indexing, lookup, and rendering stalls in some dictionaries.
-- [ ] [MDX packing and unpacking tools](https://github.com/terasum/medict/issues/785): provide a local toolchain for dictionary maintainers.
-- [ ] [Custom resource extraction directory](https://github.com/terasum/medict/issues/120): allow users to select where dictionary resources are cached or extracted.
+Install the Flatpak package:
 
-See [GitHub Issues](https://github.com/terasum/medict/issues) for more plans, bugs, and discussions.
+```bash
+flatpak install Medict-4.0.0-x86_64.flatpak
+flatpak run io.github.terasum.Medict
+```
 
-## Installing Dictionaries
+The Flatpak uses the KDE runtime and the Qt WebEngine BaseApp. It keeps the
+Flatpak sandbox and the Qt WebEngine sandbox.
 
-Medict treats each directory as one dictionary. Open **Settings → Dictionary Settings**, then use the button next to the dictionary directory to open the actual location used by your system. Put each dictionary in its own subdirectory, then restart or reload the application.
+## Install Dictionaries
+
+Medict treats one directory as one dictionary. Open **Settings**, then select
+**Open folder**. The button opens the dictionary directory for the current
+system.
+
+Put each dictionary in its own subdirectory:
 
 ```text
 dicts/
@@ -100,81 +115,99 @@ dicts/
 │   ├── Oxford.mdx
 │   ├── Oxford.mdd
 │   └── Oxford.jpg
-└── StardictExample/
+└── StarDictExample/
     ├── example.ifo
     ├── example.idx
     └── example.dict.dz
 ```
 
-Directories may be nested by language or purpose. Medict recursively discovers the directories that actually contain dictionary files.
+Medict scans subdirectories for dictionary files. Use **Dictionaries**,
+**Refresh dictionaries** after you add files.
 
 ### Dictionary File Rules
 
 | Type | Required files | Optional files |
 | --- | --- | --- |
-| MDict | One `.mdx` | One or more `.mdd` files in the same directory; `.jpg` / `.png` cover with the same base name as the `.mdx` |
-| StarDict | `.ifo`, `.idx`, and either `.dict` or `.dict.dz` | `cover.jpg` / `cover.png` |
+| MDict | One `.mdx` file | One or more `.mdd` files in the same directory |
+| StarDict | `.ifo`, `.idx`, and one `.dict` or `.dict.dz` file | `cover.jpg` or `cover.png` |
 
-A shared cover may also be named `cover.jpg` or `cover.png`. Dictionary content and licensing remain the responsibility of each dictionary provider; only use dictionary files you are authorized to use.
+Dictionary content and licensing belong to each dictionary provider. Use only
+dictionary files that you have permission to use.
 
-## Running from Source
+## Privacy and Security
+
+The Qt client does not send search requests to the internet. The Go engine
+listens only on `127.0.0.1` and uses a random token for each start. Qt starts
+the engine and stops it when the application exits.
+
+The complete ECDICT install uses network access to download dictionary data.
+Dictionary HTML can load local resources from the engine. The application
+opens external HTTP or HTTPS links in the system browser.
+
+## Development
+
+The release path uses GitHub Actions. Release packages come from the
+`package-and-release.yaml` workflow. The repository does not use local builds
+for release artifacts.
+
+### Components
+
+- `qt/`: Qt 6 Widgets client.
+- `cmd/medictd/`: headless Go dictionary engine.
+- `internal/desktopapi/`: token-protected control API.
+- `pkg/backserver/`: dictionary HTTP server.
+- `packaging/`: Linux, Flatpak, and Windows package files.
 
 ### Requirements
 
-- Go 1.25
-- [Wails CLI v2](https://wails.io/docs/gettingstarted/installation)
-- [Bun](https://bun.sh/)
-- macOS, Windows, or Linux with GTK3 and WebKitGTK installed
+- Go 1.25 or later.
+- Qt 6.8 or later with Widgets, Network, and WebEngine Widgets.
+- CMake 3.24 or later.
+- Windows with Visual Studio 2022, or Linux with a C++17 compiler.
 
-Install the Wails CLI:
+### Architecture
 
-```bash
-go install github.com/wailsapp/wails/v2/cmd/wails@latest
-```
+The Qt client starts `medictd` with port `0`. The engine binds to a free
+loopback port. It prints one `MEDICT_READY` JSON line with the port, static
+URL, API URL, token, version, and configuration directory. Qt uses the static
+URL for dictionary pages and the token-protected API for control requests.
 
-Install frontend dependencies and start development mode:
+`medictd` watches standard input and exit signals. The Qt client closes the
+standard input pipe during shutdown. The engine then stops the HTTP server and
+closes the dictionary and notebook stores.
 
-```bash
-cd frontend
-bun install --frozen-lockfile
-cd ..
-make dev
-```
+### Release Process
 
-Build the desktop application:
+1. Update the version in these files:
+   `qt/CMakeLists.txt`, `packaging/windows/medict.iss`,
+   `packaging/flatpak/io.github.terasum.Medict.yaml`,
+   `packaging/linux/io.github.terasum.Medict.metainfo.xml`, and `CHANGELOG.md`.
+   The workflow passes the tag version to the Windows and AppImage builds.
+2. Push a tag such as `v4.0.0`.
+3. Wait for the Release workflow to build the three packages.
+4. Check the GitHub Release.
 
-```bash
-make build
-```
+A manual workflow run creates a draft release. A tag push publishes the
+release.
 
-Build artifacts are written to `build/bin/`.
+## CI
 
-## Testing
+The CI workflow runs these checks:
 
-```bash
-# Run all Go tests
-go test ./...
+- Go build, vet, and tests.
+- Qt Linux build with Qt 6.8 and Qt WebEngine.
+- Qt Windows build with Qt 6.8, MSVC 2022, and Qt WebEngine.
 
-# Run frontend tests, type checking, and the production build
-cd frontend
-bun run test
-bun run typecheck
-bun run build
-```
+## Roadmap
 
-## Technology Stack
+- Full-text search in all definitions.
+- Inflection and Chinese variant fallback for missing entries.
+- More performance work for large dictionaries.
+- MDX packing and unpacking tools.
+- A configurable resource extraction directory.
 
-- Desktop framework: [Wails v2](https://wails.io/)
-- Backend: Go, Gin, LevelDB, SQLite
-- Frontend: Vue 3, Vite 6, Pinia, Naive UI, CodeMirror 6
-- Testing: Go testing, Vitest, Vue Test Utils
-
-## Contributing
-
-Bug reports, dictionary compatibility cases, and feature proposals are welcome through [GitHub Issues](https://github.com/terasum/medict/issues). For interface issues, please include your operating system, Medict version, reproduction steps, and screenshots when possible. For dictionary parsing issues, describe the dictionary format and provide the smallest publicly shareable reproduction details.
+See [GitHub Issues](https://github.com/terasum/medict/issues) for current work.
 
 ## License
 
-Medict is released under the [GNU General Public License v3.0](LICENSE).
-
-**Medict is made by terasum and xing with ❤️**
+Medict uses the [GNU General Public License v3.0](LICENSE).

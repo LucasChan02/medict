@@ -4,6 +4,40 @@ All notable changes to [Medict](https://github.com/terasum/medict) are recorded
 here. The most recent release is at the top. For the full history before
 v3.1.0, see `git log v3.0.1..HEAD`.
 
+## v4.0.0
+
+Native Qt desktop client, loopback-only Go engine, and GitHub Actions release
+packages for Windows and Linux.
+
+### Added
+- **Qt 6 desktop client**: a native Qt Widgets interface replaces the Wails
+  shell for releases. The client supports dictionary filtering, single and
+  multi-dictionary lookup, suggestions, history, definition zoom, notebooks,
+  Anki export, CSS overrides, and entry export.
+- **Headless Go engine**: `medictd` loads the dictionary service, bookmark
+  store, preferences, CSS overrides, and static dictionary server. It prints a
+  `MEDICT_READY` message with a random loopback port and API token.
+- **Token-protected control API**: the Qt client uses a local JSON API for
+  lookup, preferences, notebooks, CSS, ECDICT install, and index rebuilds.
+- **Qt WebEngine pages**: dictionary HTML and resources use the existing
+  engine renderer. Entry links return to the Qt search flow.
+- **Windows installer**: Inno Setup builds
+  `Medict-<version>-Setup.exe` with Qt WebEngine and the Go engine.
+- **Linux AppImage**: linuxdeploy and appimagetool package Qt, Qt WebEngine,
+  and the Go engine into one AppImage.
+- **Linux Flatpak**: the release includes a Flatpak bundle that uses the KDE
+  runtime and Qt WebEngine BaseApp.
+
+### Changed
+- Release builds now target Windows x86_64 and Linux x86_64 only.
+- GitHub Actions builds the EXE, AppImage, and Flatpak packages.
+- The Qt client uses CMake and Qt 6.8.
+
+### Security
+- The control API binds only to `127.0.0.1`.
+- Each engine start uses a new random API token.
+- The engine exits when the Qt client closes its standard input pipe.
+
 ## v3.1.13
 
 Platform-aware title bar, ECDICT rendering fix, and inflection fallback for the built-in dictionary.

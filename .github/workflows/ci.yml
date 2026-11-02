@@ -8,44 +8,113 @@ on:
 
 jobs:
   backend:
-    name: Backend (Go)
+    name: Go engine
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Go
+      - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.25.x
+          go-version: '1.25.x'
 
       - name: Build
-        run: go build ./pkg/... ./internal/...
+        run: go build ./cmd/... ./pkg/... ./internal/...
 
       - name: Vet
-        run: go vet ./pkg/... ./internal/...
+        run: go vet ./cmd/... ./pkg/... ./internal/...
 
       - name: Test
         run: go test ./pkg/... ./internal/...
 
-  frontend:
-    name: Frontend (Bun)
-    runs-on: ubuntu-latest
+  qt-linux:
+    name: Qt client (Linux)
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgl1-mesa-dev \
+            libnss3-dev \
+            libx11-xcb-dev \
+            libxcb-cursor-dev \
+            libxcb-icccm4-dev \
+            libxcb-image0-dev \
+            libxcb-keysyms1-dev \
+            libxcb-render-util0-dev \
+            libxcb-shape0-dev \
+            libxcb-xinerama0-dev \
+            libxcb-xkb-dev \
+            libxkbcommon-dev \
+            libxkbcommon-x11-dev
 
-      - name: Install dependencies
-        run: bun install
-        working-directory: frontend
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
 
-      - name: Build
-        run: bun run build
-        working-directory: frontend
+      - name: Set up Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          arch: linux_gcc_64
+          modules: 'qtwebengine'
+          cache: true
 
-      - name: Typecheck
-        run: bun run typecheck
-        working-directory: frontend
+      - name: Build dictionary backend
+        run: go build -trimpath -o build/medictd ./cmd/medictd
+
+      - name: Configure Qt client
+        run: |
+          cmake -S qt -B build/qt -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" \
+            -DMEDICT_BACKEND_BINARY="$PWD/build/medictd"
+
+      - name: Build Qt client
+        run: cmake --build build/qt --parallel
+
+  qt-windows:
+    name: Qt client (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+
+      - name: Set up Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          arch: win64_msvc2022_64
+          modules: 'qtwebengine'
+          cache: true
+
+      - name: Build dictionary backend
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build | Out-Null
+          go build -trimpath `
+            -ldflags "-s -w -H=windowsgui" `
+            -o build/medictd.exe ./cmd/medictd
+
+      - name: Configure Qt client
+        shell: pwsh
+        run: |
+          cmake -S qt -B build/qt -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" `
+            -DMEDICT_BACKEND_BINARY="$PWD/build/medictd.exe"
+
+      - name: Build Qt client
+        shell: pwsh
+        run: cmake --build build/qt --config Release --parallel

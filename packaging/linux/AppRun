@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+
+HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+export QT_QPA_PLATFORMTHEME="${QT_QPA_PLATFORMTHEME:-kde}"
+export QTWEBENGINEPROCESS_PATH="$HERE/usr/libexec/QtWebEngineProcess"
+export QTWEBENGINE_RESOURCES_PATH="$HERE/usr/resources"
+export QTWEBENGINE_LOCALES_PATH="$HERE/usr/translations/qtwebengine_locales"
+
+exec "$HERE/usr/bin/medict" "$@"
+

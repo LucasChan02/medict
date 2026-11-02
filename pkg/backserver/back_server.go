@@ -83,6 +83,37 @@ func (bs *BackServer) Start() {
 	}
 }
 
+// StartOn starts the HTTP server on a caller-provided loopback address.
+// It returns the static content base URL after the listener is ready.
+// The desktop backend uses this method to report its random port to Qt.
+func (bs *BackServer) StartOn(listenAddr string) (string, error) {
+	if listenAddr == "" {
+		listenAddr = "127.0.0.1:0"
+	}
+
+	ln, err := net.Listen("tcp", listenAddr)
+	if err != nil {
+		return "", err
+	}
+
+	srv := &http.Server{
+		Addr:    listenAddr,
+		Handler: bs.GinEngine,
+	}
+
+	bs.ListenAddr = ln.Addr()
+	bs.Ready = true
+	bs.Srv = srv
+
+	go func() {
+		if serveErr := srv.Serve(ln); serveErr != nil && serveErr != http.ErrServerClosed {
+			log.Errorf("backserver serve err: %s", serveErr.Error())
+		}
+	}()
+
+	return bs.StaticServerBaseUrl(), nil
+}
+
 func (bs *BackServer) GracefulStop() {
 	ctx, cancel := context.WithTimeout(context.Background(), 400*time.Millisecond)
 	defer cancel()
