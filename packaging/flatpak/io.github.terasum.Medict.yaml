@@ -33,6 +33,7 @@ modules:
 
   - name: kirigami
     buildsystem: cmake-ninja
+    builddir: true
     config-opts:
       - -DBUILD_TESTING=OFF
       - -DBUILD_EXAMPLES=OFF

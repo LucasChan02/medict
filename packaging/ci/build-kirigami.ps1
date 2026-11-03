@@ -60,17 +60,18 @@ $PrefixPath = "$env:QT_ROOT_DIR;$Prefix"
 $EcmSource = Join-Path $BuildRoot "extra-cmake-modules-$EcmVersion"
 $EcmBuild = Join-Path $BuildRoot "ecm-build"
 
-cmake -S $EcmSource -B $EcmBuild -G "Visual Studio 17 2022" -A x64 `
+cmake -S $EcmSource -B $EcmBuild -G Ninja `
+    -DCMAKE_BUILD_TYPE=Release `
     -DCMAKE_INSTALL_PREFIX="$Prefix" `
     -DBUILD_TESTING=OFF
 if ($LASTEXITCODE -ne 0) {
     throw "ECM configure failed."
 }
-cmake --build $EcmBuild --config Release --parallel
+cmake --build $EcmBuild --parallel
 if ($LASTEXITCODE -ne 0) {
     throw "ECM build failed."
 }
-cmake --install $EcmBuild --config Release
+cmake --install $EcmBuild
 if ($LASTEXITCODE -ne 0) {
     throw "ECM install failed."
 }
@@ -78,7 +79,8 @@ if ($LASTEXITCODE -ne 0) {
 $KirigamiSource = Join-Path $BuildRoot "kirigami-$KirigamiVersion"
 $KirigamiBuild = Join-Path $BuildRoot "kirigami-build"
 
-cmake -S $KirigamiSource -B $KirigamiBuild -G "Visual Studio 17 2022" -A x64 `
+cmake -S $KirigamiSource -B $KirigamiBuild -G Ninja `
+    -DCMAKE_BUILD_TYPE=Release `
     -DCMAKE_INSTALL_PREFIX="$Prefix" `
     -DCMAKE_PREFIX_PATH="$PrefixPath" `
     -DBUILD_TESTING=OFF `
@@ -91,11 +93,11 @@ cmake -S $KirigamiSource -B $KirigamiBuild -G "Visual Studio 17 2022" -A x64 `
 if ($LASTEXITCODE -ne 0) {
     throw "Kirigami configure failed."
 }
-cmake --build $KirigamiBuild --config Release --parallel
+cmake --build $KirigamiBuild --parallel
 if ($LASTEXITCODE -ne 0) {
     throw "Kirigami build failed."
 }
-cmake --install $KirigamiBuild --config Release
+cmake --install $KirigamiBuild
 if ($LASTEXITCODE -ne 0) {
     throw "Kirigami install failed."
 }

@@ -108,6 +108,7 @@ public:
 
     Q_INVOKABLE void start();
     Q_INVOKABLE void dismissError();
+    void setCurrentDefinitionIndex(int index);
     Q_INVOKABLE void setSearchText(const QString &text);
     Q_INVOKABLE void requestSuggestions(const QString &prefix);
     Q_INVOKABLE void lookup(const QString &word);

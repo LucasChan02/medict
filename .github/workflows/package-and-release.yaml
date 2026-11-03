@@ -40,6 +40,11 @@ jobs:
           modules: 'qtwebengine qtwebchannel qtpositioning qtshadertools'
           cache: true
 
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Build ECM and Kirigami
         shell: pwsh
         run: ./packaging/ci/build-kirigami.ps1
@@ -57,7 +62,7 @@ jobs:
       - name: Configure Qt client
         shell: pwsh
         run: |
-          cmake -S qt -B build/qt -G "Visual Studio 17 2022" -A x64 `
+          cmake -S qt -B build/qt -G Ninja `
             -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR;$PWD/build/kf6-prefix" `
             -DMEDICT_BACKEND_BINARY="$PWD/build/medictd.exe" `
@@ -65,14 +70,14 @@ jobs:
 
       - name: Build Qt client
         shell: pwsh
-        run: cmake --build build/qt --config Release --parallel
+        run: cmake --build build/qt --parallel
 
       - name: Stage application
         shell: pwsh
         run: |
           $stage = Join-Path $PWD 'stage'
-          cmake --install build/qt --config Release --prefix $stage
-          cmake --install build/kirigami-build --config Release --prefix $stage
+          cmake --install build/qt --prefix $stage
+          cmake --install build/kirigami-build --prefix $stage
           $env:QML_IMPORT_PATH = "$env:QT_ROOT_DIR\qml;$PWD\build\kf6-prefix\qml"
           & "$env:QT_ROOT_DIR\bin\windeployqt.exe" `
             --release `
