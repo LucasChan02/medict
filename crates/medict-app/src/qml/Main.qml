@@ -62,6 +62,8 @@ Kirigami.ApplicationWindow {
     minimumHeight: Kirigami.Units.gridUnit * 24
     visible: true
 
+    Component.onCompleted: Controller.start()
+
     function closeLayers(): void {
         while (pageStack.layers.depth > 0) {
             pageStack.layers.pop();

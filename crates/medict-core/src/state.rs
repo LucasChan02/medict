@@ -399,13 +399,12 @@ impl AppCore {
     }
 
     pub fn select_dictionary(&self, id: &str) -> Result<String> {
-        let mut accepted = false;
         {
             let mut guard = write_lock(&self.runtime);
             let runtime = guard
                 .as_mut()
                 .ok_or_else(|| MedictError::Message("The engine is not ready.".to_string()))?;
-            accepted = runtime
+            let accepted = runtime
                 .dictionaries
                 .iter()
                 .any(|dictionary| dictionary.meta.id == id);

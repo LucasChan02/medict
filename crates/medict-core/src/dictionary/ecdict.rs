@@ -92,14 +92,14 @@ impl EcdictBackend {
             if candidate.is_empty() {
                 continue;
             }
-            let escaped = escape_like(&candidate);
-            let upper = format!("{escaped}\u{10ffff}");
+            let lower = candidate.clone();
+            let upper = format!("{candidate}\u{10ffff}");
             let mut statement = self.connection.prepare(
                 "SELECT word FROM ecdict
                  WHERE word >= ?1 AND word < ?2
                  ORDER BY frq ASC LIMIT ?3",
             )?;
-            let rows = statement.query_map(params![escaped, upper, limit as i64], |row| {
+            let rows = statement.query_map(params![lower, upper, limit as i64], |row| {
                 row.get::<_, String>(0)
             })?;
             let words = rows.collect::<rusqlite::Result<Vec<_>>>()?;

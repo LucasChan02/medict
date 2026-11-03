@@ -10,14 +10,9 @@ fn main() {
     resource.set("FileDescription", "Offline MDict and StarDict dictionary");
     resource.set("CompanyName", "Medict contributors");
     resource.set("LegalCopyright", "Copyright (c) 2026 Medict contributors");
-    resource.set(
-        "FileVersion",
-        env!("CARGO_PKG_VERSION").replace('.', ",") + ",0",
-    );
-    resource.set(
-        "ProductVersion",
-        env!("CARGO_PKG_VERSION").replace('.', ",") + ",0",
-    );
+    let numeric_version = format!("{},0", env!("CARGO_PKG_VERSION").replace('.', ","));
+    resource.set("FileVersion", &numeric_version);
+    resource.set("ProductVersion", &numeric_version);
     if let Err(error) = resource.compile() {
         panic!("failed to compile Windows resources: {error}");
     }
