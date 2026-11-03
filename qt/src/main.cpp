@@ -56,6 +56,7 @@ void configureTheme()
 int main(int argc, char *argv[])
 {
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+    QtWebEngineQuick::initialize();
     QGuiApplication app(argc, argv);
     QGuiApplication::setApplicationName(QStringLiteral("Medict"));
     QGuiApplication::setApplicationDisplayName(QStringLiteral("Medict"));
@@ -65,7 +66,6 @@ int main(int argc, char *argv[])
     QGuiApplication::setDesktopFileName(QStringLiteral("io.github.terasum.Medict"));
     QGuiApplication::setWindowIcon(QIcon(QStringLiteral(":/appicon.png")));
 
-    QtWebEngineQuick::initialize();
     configureTheme();
 
     ApiClient api;

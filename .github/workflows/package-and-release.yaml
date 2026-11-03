@@ -132,7 +132,7 @@ jobs:
           New-Item -ItemType Directory -Force "$stage\qml" | Out-Null
           Copy-Item -Path (Join-Path $kf6Qml '*') -Destination "$stage\qml" `
             -Recurse -Force
-          foreach ($runtimeDir in @($kf6, (Join-Path $kf6 'lib'))) {
+          foreach ($runtimeDir in @($kf6, (Join-Path $kf6 'bin'), (Join-Path $kf6 'lib'))) {
             if (Test-Path -LiteralPath $runtimeDir) {
               Get-ChildItem -LiteralPath $runtimeDir -File -Filter '*.dll' |
                 ForEach-Object {
@@ -141,7 +141,7 @@ jobs:
             }
           }
 
-          $env:PATH = "$kf6\lib;$kf6;$env:PATH"
+          $env:PATH = "$kf6\bin;$kf6\lib;$kf6;$env:PATH"
           $env:QML_IMPORT_PATH = "$stage\qml;$env:QT_ROOT_DIR\qml"
           $env:QML2_IMPORT_PATH = $env:QML_IMPORT_PATH
           & "$env:QT_ROOT_DIR\bin\windeployqt.exe" `
@@ -156,7 +156,7 @@ jobs:
 
           Copy-Item -Path (Join-Path $kf6Qml '*') -Destination "$stage\qml" `
             -Recurse -Force
-          foreach ($runtimeDir in @($kf6, (Join-Path $kf6 'lib'))) {
+          foreach ($runtimeDir in @($kf6, (Join-Path $kf6 'bin'), (Join-Path $kf6 'lib'))) {
             if (Test-Path -LiteralPath $runtimeDir) {
               Get-ChildItem -LiteralPath $runtimeDir -File -Filter '*.dll' |
                 ForEach-Object {

@@ -345,7 +345,7 @@ Kirigami.Page {
             }
         }
 
-        Controls.StackLayout {
+        StackLayout {
             id: definitionStack
 
             Layout.fillWidth: true

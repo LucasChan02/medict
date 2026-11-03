@@ -10,6 +10,8 @@ Patch release for the Windows installer and Linux AppImage runtime. This
 release fixes blank application windows and restores a self-contained AppImage.
 
 ### Fixed
+- The definition pane now loads `StackLayout` from `QtQuick.Layouts`, so the
+  main QML window no longer fails during startup.
 - The Windows installer now includes the Kirigami QML modules, QML plugins,
   and runtime libraries required by the main window.
 - The Linux AppImage again bundles Qt 6, Qt WebEngine, QML modules, WebEngine

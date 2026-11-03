@@ -44,7 +44,7 @@ function Test-KirigamiInstall {
         return $false
     }
 
-    $RuntimeDirs = @($Root, (Join-Path $Root "lib"))
+    $RuntimeDirs = @($Root, (Join-Path $Root "bin"), (Join-Path $Root "lib"))
     foreach ($RuntimeDir in $RuntimeDirs) {
         if (Get-ChildItem -LiteralPath $RuntimeDir -File -Filter "*Kirigami*.dll" `
                 -ErrorAction SilentlyContinue) {
