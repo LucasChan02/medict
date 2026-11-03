@@ -9,11 +9,19 @@
 [![License](https://img.shields.io/github/license/terasum/medict.svg?style=flat-square)](LICENSE)
 
 Medict 是一款离线词典应用，支持 MDict 和 StarDict 词典。桌面客户端使用
-Qt 6 Widgets 和 Qt WebEngine。本地 Go 进程读取词典文件，并提供控制 API。
+Qt 6、Kirigami 和 Qt WebEngine，并遵循 KDE 人机界面指南。在 KDE 上使用
+当前 Plasma 样式和 Breeze 图标。本地 Go 进程读取词典文件，并提供控制 API。
 
 当前稳定版本为 **v4.0.0**。
 
 ## 功能
+
+### 界面
+
+- 使用 Kirigami 全局抽屉和自适应页面布局。
+- 在 KDE 上使用 Plasma 颜色、控件和 Breeze 图标。其他桌面使用原生
+  Qt Quick 样式和内置 Breeze 图标。
+- 提供独立的查词、生词本、设置、CSS 编辑器和关于页面。
 
 ### 查词
 
@@ -142,7 +150,7 @@ Qt 客户端不会将查词请求发送到互联网。Go 引擎只监听 `127.0.
 
 ### 组件
 
-- `qt/`：Qt 6 Widgets 客户端。
+- `qt/`：Qt 6 Kirigami 客户端。
 - `cmd/medictd/`：无界面 Go 词典引擎。
 - `internal/desktopapi/`：受令牌保护的控制 API。
 - `pkg/backserver/`：词典 HTTP 服务器。
@@ -176,8 +184,9 @@ API 发送控制请求。
 CI 工作流执行以下检查：
 
 - Go 构建、vet 和测试。
-- 使用 Qt 6.8 和 Qt WebEngine 构建 Linux 版 Qt 客户端。
-- 使用 Qt 6.8、MSVC 2022 和 Qt WebEngine 构建 Windows 版 Qt 客户端。
+- 使用 Qt 6.10、Kirigami 6.31 和 Qt WebEngine 构建 Linux 版 Qt 客户端。
+- 使用 Qt 6.10、Kirigami 6.31、MSVC 2022 和 Qt WebEngine 构建 Windows
+  版 Qt 客户端。
 
 ## 路线图
 

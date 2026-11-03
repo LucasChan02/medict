@@ -9,12 +9,21 @@
 [![License](https://img.shields.io/github/license/terasum/medict.svg?style=flat-square)](LICENSE)
 
 Medict is an offline dictionary application. It reads MDict and StarDict
-dictionaries. The desktop client uses Qt 6 Widgets and Qt WebEngine. A local
-Go process reads the dictionary files and supplies the control API.
+dictionaries. The desktop client uses Qt 6, Kirigami, and Qt WebEngine. It
+follows the KDE Human Interface Guidelines and uses the active Plasma style
+and Breeze icons when available. A local Go process reads the dictionary files
+and supplies the control API.
 
 The current stable release is **v4.0.0**.
 
 ## Features
+
+### Interface
+
+- Uses a Kirigami global drawer and adaptive page layout.
+- Uses Plasma colors, controls, and Breeze icons on KDE. Other desktops use the
+  native Qt Quick style and embedded Breeze icons.
+- Provides dedicated lookup, notebook, settings, CSS editor, and About pages.
 
 ### Lookup
 
@@ -152,7 +161,7 @@ for release artifacts.
 
 ### Components
 
-- `qt/`: Qt 6 Widgets client.
+- `qt/`: Qt 6 Kirigami client.
 - `cmd/medictd/`: headless Go dictionary engine.
 - `internal/desktopapi/`: token-protected control API.
 - `pkg/backserver/`: dictionary HTTP server.
@@ -161,8 +170,10 @@ for release artifacts.
 ### Requirements
 
 - Go 1.25 or later.
-- Qt 6.8 or later with Widgets, Network, and WebEngine Widgets.
-- CMake 3.24 or later.
+- Qt 6.10 or later with Qml, Quick Controls 2, Network, SVG, and WebEngine
+  Quick.
+- KDE Frameworks 6.31 or later, including Kirigami.
+- CMake 3.30 or later.
 - Windows with Visual Studio 2022, or Linux with a C++17 compiler.
 
 ### Architecture
@@ -195,8 +206,8 @@ release.
 The CI workflow runs these checks:
 
 - Go build, vet, and tests.
-- Qt Linux build with Qt 6.8 and Qt WebEngine.
-- Qt Windows build with Qt 6.8, MSVC 2022, and Qt WebEngine.
+- Qt Linux build with Qt 6.10, Kirigami 6.31, and Qt WebEngine.
+- Qt Windows build with Qt 6.10, Kirigami 6.31, MSVC 2022, and Qt WebEngine.
 
 ## Roadmap
 

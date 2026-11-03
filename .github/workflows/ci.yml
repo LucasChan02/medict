@@ -5,6 +5,7 @@ on:
     branches:
       - develop
       - master
+  workflow_dispatch:
 
 jobs:
   backend:
@@ -12,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.25.x'
 
@@ -33,7 +34,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install build dependencies
         run: |
@@ -41,6 +42,7 @@ jobs:
           sudo apt-get install -y \
             libgl1-mesa-dev \
             libnss3-dev \
+            libsqlite3-dev \
             libx11-xcb-dev \
             libxcb-cursor-dev \
             libxcb-icccm4-dev \
@@ -51,20 +53,24 @@ jobs:
             libxcb-xinerama0-dev \
             libxcb-xkb-dev \
             libxkbcommon-dev \
-            libxkbcommon-x11-dev
+            libxkbcommon-x11-dev \
+            ninja-build
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.25.x'
 
       - name: Set up Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.8.3'
+          version: '6.10.0'
           arch: linux_gcc_64
-          modules: 'qtwebengine qtwebchannel qtpositioning qtserialport'
+          modules: 'qtwebengine qtwebchannel qtpositioning qtshadertools'
           cache: true
+
+      - name: Build ECM and Kirigami
+        run: sh packaging/ci/build-kirigami.sh
 
       - name: Build dictionary backend
         run: go build -trimpath -o build/medictd ./cmd/medictd
@@ -73,7 +79,7 @@ jobs:
         run: |
           cmake -S qt -B build/qt -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" \
+            -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR;$PWD/build/kf6-prefix" \
             -DMEDICT_BACKEND_BINARY="$PWD/build/medictd"
 
       - name: Build Qt client
@@ -84,20 +90,24 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.25.x'
 
       - name: Set up Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.8.3'
+          version: '6.10.0'
           arch: win64_msvc2022_64
-          modules: 'qtwebengine qtwebchannel qtpositioning'
+          modules: 'qtwebengine qtwebchannel qtpositioning qtshadertools'
           cache: true
+
+      - name: Build ECM and Kirigami
+        shell: pwsh
+        run: ./packaging/ci/build-kirigami.ps1
 
       - name: Build dictionary backend
         shell: pwsh
@@ -112,7 +122,7 @@ jobs:
         run: |
           cmake -S qt -B build/qt -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" `
+            -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR;$PWD/build/kf6-prefix" `
             -DMEDICT_BACKEND_BINARY="$PWD/build/medictd.exe"
 
       - name: Build Qt client

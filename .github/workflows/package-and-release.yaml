@@ -25,20 +25,24 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.25.x'
 
       - name: Set up Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.8.3'
+          version: '6.10.0'
           arch: win64_msvc2022_64
-          modules: 'qtwebengine qtwebchannel qtpositioning'
+          modules: 'qtwebengine qtwebchannel qtpositioning qtshadertools'
           cache: true
+
+      - name: Build ECM and Kirigami
+        shell: pwsh
+        run: ./packaging/ci/build-kirigami.ps1
 
       - name: Build dictionary backend
         shell: pwsh
@@ -55,7 +59,7 @@ jobs:
         run: |
           cmake -S qt -B build/qt -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" `
+            -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR;$PWD/build/kf6-prefix" `
             -DMEDICT_BACKEND_BINARY="$PWD/build/medictd.exe" `
             -DMEDICT_VERSION="$env:PACKAGE_VERSION"
 
@@ -68,9 +72,12 @@ jobs:
         run: |
           $stage = Join-Path $PWD 'stage'
           cmake --install build/qt --config Release --prefix $stage
+          cmake --install build/kirigami-build --config Release --prefix $stage
+          $env:QML_IMPORT_PATH = "$env:QT_ROOT_DIR\qml;$PWD\build\kf6-prefix\qml"
           & "$env:QT_ROOT_DIR\bin\windeployqt.exe" `
             --release `
             --compiler-runtime `
+            --qmldir "$PWD\qt\qml" `
             --dir $stage `
             "$stage\Medict.exe"
 
@@ -88,7 +95,7 @@ jobs:
             "packaging\windows\medict.iss"
 
       - name: Upload installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Medict-Windows
           path: dist/*.exe
@@ -99,7 +106,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install build dependencies
         run: |
@@ -112,6 +119,7 @@ jobs:
             libgl1-mesa-dev \
             libnss3 \
             libnss3-dev \
+            libsqlite3-dev \
             libx11-xcb-dev \
             libxcb-cursor0 \
             libxcb-cursor-dev \
@@ -132,20 +140,24 @@ jobs:
             libxkbcommon-dev \
             libxkbcommon-x11-0 \
             libxkbcommon-x11-dev \
+            ninja-build \
             patchelf
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.25.x'
 
       - name: Set up Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.8.3'
+          version: '6.10.0'
           arch: linux_gcc_64
-          modules: 'qtwebengine qtwebchannel qtpositioning qtserialport'
+          modules: 'qtwebengine qtwebchannel qtpositioning qtshadertools'
           cache: true
+
+      - name: Build ECM and Kirigami
+        run: sh packaging/ci/build-kirigami.sh
 
       - name: Build dictionary backend
         run: |
@@ -161,11 +173,12 @@ jobs:
           cmake -S qt -B build/qt -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=/usr \
-            -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" \
+            -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR;$PWD/build/kf6-prefix" \
             -DMEDICT_BACKEND_BINARY="$PWD/build/medictd" \
             -DMEDICT_VERSION="$PACKAGE_VERSION"
           cmake --build build/qt --parallel
           DESTDIR="$PWD/AppDir" cmake --install build/qt
+          DESTDIR="$PWD/AppDir" cmake --install build/kirigami-build --prefix /usr
 
       - name: Deploy Qt libraries
         run: |
@@ -177,6 +190,9 @@ jobs:
           export APPIMAGE_EXTRACT_AND_RUN=1
           export QMAKE="$QT_ROOT_DIR/bin/qmake"
           export EXTRA_QT_MODULES="webenginecore"
+          export QML_SOURCES_PATHS="$PWD/qt/qml"
+          export QML_IMPORT_PATH="$PWD/build/kf6-prefix/lib/qt6/qml:$QT_ROOT_DIR/qml"
+          export LD_LIBRARY_PATH="$PWD/build/kf6-prefix/lib:$QT_ROOT_DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
           ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt
 
       - name: Build AppImage
@@ -189,7 +205,7 @@ jobs:
             AppDir "dist/Medict-${PACKAGE_VERSION}-x86_64.AppImage"
 
       - name: Upload AppImage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Medict-AppImage
           path: dist/*.AppImage
@@ -200,7 +216,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Flatpak tools
         run: |
@@ -208,7 +224,7 @@ jobs:
           sudo apt-get install -y flatpak flatpak-builder
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.25.x'
 
@@ -240,7 +256,7 @@ jobs:
             io.github.terasum.Medict
 
       - name: Upload Flatpak
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Medict-Flatpak
           path: dist/*.flatpak
@@ -255,10 +271,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download package artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: assets
           merge-multiple: true

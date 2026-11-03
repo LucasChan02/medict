@@ -22,6 +22,25 @@ cleanup-commands:
   - /app/cleanup-BaseApp.sh
 
 modules:
+  - name: extra-cmake-modules
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DBUILD_TESTING=OFF
+    sources:
+      - type: archive
+        url: https://download.kde.org/stable/frameworks/6.31/extra-cmake-modules-6.31.0.tar.xz
+        sha256: 8f74af329e4c918358bfe54316f8cf4d530c28444595a3e2fb15075f72877f17
+
+  - name: kirigami
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DBUILD_TESTING=OFF
+      - -DBUILD_EXAMPLES=OFF
+    sources:
+      - type: archive
+        url: https://download.kde.org/stable/frameworks/6.31/kirigami-6.31.0.tar.xz
+        sha256: 811a8a150e636216269c0346e62470997fa282113a39e32b2d332bd5969926f0
+
   - name: medict
     buildsystem: simple
     build-commands:

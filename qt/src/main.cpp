@@ -2,29 +2,83 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "api_client.h"
-#include "main_window.h"
+#include "app_controller.h"
 
-#include <QApplication>
+#include <QFileInfo>
+#include <QGuiApplication>
 #include <QIcon>
-#include <QTimer>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QQmlEngine>
+#include <QQuickStyle>
+#include <QtWebEngineQuick/QtWebEngineQuick>
+
+namespace {
+
+bool hasQuickStyle(const QString &styleName)
+{
+    QQmlEngine engine;
+    const QString stylePath = QString(styleName).replace(QLatin1Char('.'), QLatin1Char('/'));
+    const QStringList importPaths = engine.importPathList();
+    for (const QString &importPath : importPaths) {
+        if (QFileInfo::exists(importPath + QLatin1Char('/') + stylePath
+                              + QStringLiteral("/qmldir"))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void configureTheme()
+{
+    const QString appDir = QCoreApplication::applicationDirPath();
+    QStringList iconPaths{
+        QStringLiteral(":/icons"),
+        appDir + QStringLiteral("/share/icons"),
+    };
+    iconPaths.append(QIcon::themeSearchPaths());
+    QIcon::setThemeSearchPaths(iconPaths);
+    QIcon::setFallbackThemeName(QStringLiteral("breeze"));
+    if (QIcon::themeName().isEmpty()) {
+        QIcon::setThemeName(QStringLiteral("breeze"));
+    }
+
+    if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {
+        QQuickStyle::setStyle(hasQuickStyle(QStringLiteral("org.kde.desktop"))
+                                  ? QStringLiteral("org.kde.desktop")
+                                  : QStringLiteral("Fusion"));
+    }
+}
+
+} // namespace
 
 int main(int argc, char *argv[])
 {
-    QApplication app(argc, argv);
-    QApplication::setApplicationName(QStringLiteral("Medict"));
-    QApplication::setApplicationDisplayName(QStringLiteral("Medict"));
-    QApplication::setOrganizationName(QStringLiteral("Medict"));
-    QApplication::setApplicationVersion(QStringLiteral(MEDICT_VERSION));
-    QApplication::setWindowIcon(QIcon(QStringLiteral(":/appicon.png")));
+    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+    QGuiApplication app(argc, argv);
+    QGuiApplication::setApplicationName(QStringLiteral("Medict"));
+    QGuiApplication::setApplicationDisplayName(QStringLiteral("Medict"));
+    QGuiApplication::setApplicationVersion(QStringLiteral(MEDICT_VERSION));
+    QGuiApplication::setOrganizationName(QStringLiteral("Medict"));
+    QGuiApplication::setOrganizationDomain(QStringLiteral("terasum.github.io"));
+    QGuiApplication::setDesktopFileName(QStringLiteral("io.github.terasum.Medict"));
+    QGuiApplication::setWindowIcon(QIcon(QStringLiteral(":/appicon.png")));
 
-    auto *api = new ApiClient(&app);
-    auto *window = new MainWindow(api, QStringLiteral(MEDICT_VERSION));
-    window->show();
+    QtWebEngineQuick::initialize();
+    configureTheme();
 
-    QTimer::singleShot(0, api, [api]() {
-        api->start(QStringLiteral(MEDICT_VERSION));
-    });
+    ApiClient api;
+    AppController controller(&api, QStringLiteral(MEDICT_VERSION));
 
+    QQmlApplicationEngine engine;
+    engine.addImportPath(QCoreApplication::applicationDirPath() + QStringLiteral("/qml"));
+    engine.rootContext()->setContextProperty(QStringLiteral("appController"), &controller);
+    engine.loadFromModule(QStringLiteral("Medict"), QStringLiteral("Main"));
+    if (engine.rootObjects().isEmpty()) {
+        return 1;
+    }
+
+    controller.start();
     return app.exec();
 }
 

@@ -10,8 +10,10 @@ Native Qt desktop client, loopback-only Go engine, and GitHub Actions release
 packages for Windows and Linux.
 
 ### Added
-- **Qt 6 desktop client**: a native Qt Widgets interface replaces the Wails
-  shell for releases. The client supports dictionary filtering, single and
+- **Qt 6 desktop client**: a native Kirigami interface replaces the Wails
+  shell for releases. The interface follows the KDE Human Interface
+  Guidelines, uses an adaptive global drawer, Plasma controls, and Breeze
+  icons. The client supports dictionary filtering, single and
   multi-dictionary lookup, suggestions, history, definition zoom, notebooks,
   Anki export, CSS overrides, and entry export.
 - **Headless Go engine**: `medictd` loads the dictionary service, bookmark
@@ -31,7 +33,7 @@ packages for Windows and Linux.
 ### Changed
 - Release builds now target Windows x86_64 and Linux x86_64 only.
 - GitHub Actions builds the EXE, AppImage, and Flatpak packages.
-- The Qt client uses CMake and Qt 6.8.
+- The Qt client uses CMake, Qt 6.10, and Kirigami 6.31.
 
 ### Security
 - The control API binds only to `127.0.0.1`.
