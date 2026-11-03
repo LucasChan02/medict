@@ -10,4 +10,5 @@ Categories=Education;Dictionary;
 Keywords=dictionary;mdict;stardict;english;chinese;
 StartupNotify=true
 StartupWMClass=medict
+X-KDE-FormFactor=desktop
 

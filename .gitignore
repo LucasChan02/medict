@@ -106,6 +106,7 @@ testdict/
 
 *.mdx
 *.meidx
+!assets/presets/cc-cedict/cc-cedict.mdx
 
 # Claude Code local agent config
 .claude/

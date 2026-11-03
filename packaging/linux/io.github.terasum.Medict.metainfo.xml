@@ -24,6 +24,15 @@
   </developer>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="5.0.0" date="2026-11-03">
+      <description>
+        <p>
+          Complete Rust rewrite with a Qt Bridge and Kirigami interface.
+          Dictionary parsing, persistence, search, rendering, and file work
+          now run in Rust workers outside the UI thread.
+        </p>
+      </description>
+    </release>
     <release version="4.0.2" date="2026-11-03">
       <description>
         <p>

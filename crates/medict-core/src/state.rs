@@ -254,7 +254,7 @@ impl AppCore {
         .to_json()
     }
 
-    pub fn begin_lookup(&self, word: &str, append_history: bool) -> (u64, String) {
+    pub fn begin_lookup(&self, word: &str, record_history: bool) -> (u64, String) {
         let sequence = self.lookup_sequence.fetch_add(1, Ordering::SeqCst) + 1;
         {
             let mut guard = write_lock(&self.runtime);
@@ -264,7 +264,7 @@ impl AppCore {
                 runtime.ui.error.clear();
                 runtime.ui.status = format!("Searching for {word}...");
                 runtime.ui.definitions.clear();
-                if append_history {
+                if record_history {
                     append_history(&mut runtime.ui, word);
                 }
                 runtime.config.set_string("lastword", word);

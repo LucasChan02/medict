@@ -24,7 +24,8 @@ pub fn wrap_content(
     let dict_id = &dictionary.meta.id;
     let dictionary_base = format!("{base_url}resource/{dict_id}/");
     let base_css = dictionary.base_css();
-    let title = html_escape::encode_text(&format!("{} — {}", key, dictionary.meta.name));
+    let title =
+        html_escape::encode_text(&format!("{} — {}", key, dictionary.meta.name)).into_owned();
     let safe_user_css = user_css.replace("</style", r"<\/style");
     let safe_base_css = base_css.replace("</style", r"<\/style");
     let javascript_bridge = format!(

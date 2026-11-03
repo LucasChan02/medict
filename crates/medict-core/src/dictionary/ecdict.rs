@@ -6,7 +6,6 @@ use html_escape::encode_text;
 use rusqlite::{Connection, OptionalExtension, params};
 
 use crate::error::{MedictError, Result};
-use crate::util::atomic_write;
 
 const FULL_SOURCE_URL: &str = "https://raw.githubusercontent.com/skywind3000/ECDICT/master/ecdict.csv";
 const MINIMUM_FULL_ROWS: i64 = 700_000;
@@ -481,14 +480,9 @@ fn lemma_candidates(word: &str) -> Vec<String> {
         return result;
     }
     let stem = |count: usize| word[..word.len() - count].to_string();
-    let doubled = |base: &str| {
+    let is_doubled = |base: &str| {
         let bytes = base.as_bytes();
-        if bytes.len() >= 2 && bytes[bytes.len() - 1] == bytes[bytes.len() - 2] {
-            add(base[..base.len() - 1].to_string());
-            true
-        } else {
-            false
-        }
+        bytes.len() >= 2 && bytes[bytes.len() - 1] == bytes[bytes.len() - 2]
     };
 
     if word.ends_with("ies") && word.len() > 4 {
@@ -508,7 +502,9 @@ fn lemma_candidates(word: &str) -> Vec<String> {
     }
     if word.ends_with("ed") {
         let base = stem(2);
-        if !doubled(&base) {
+        if is_doubled(&base) {
+            add(base[..base.len() - 1].to_string());
+        } else {
             add(base.clone());
         }
         add(format!("{base}e"));
@@ -517,25 +513,32 @@ fn lemma_candidates(word: &str) -> Vec<String> {
         add(format!("{}ie", stem(4)));
     } else if word.ends_with("ing") {
         let base = stem(3);
-        add(base.clone());
-        if !doubled(&base) {
+        if is_doubled(&base) {
+            add(base[..base.len() - 1].to_string());
+        } else {
+            add(base.clone());
             add(format!("{base}e"));
         }
     }
     if word.ends_with("iest") {
         add(format!("{}y", stem(4)));
-    } else if word.ends_with("est") && !doubled(&stem(3)) {
-        add(stem(3));
+    } else if word.ends_with("est") {
+        let base = stem(3);
+        if is_doubled(&base) {
+            add(base[..base.len() - 1].to_string());
+        } else {
+            add(base);
+        }
     }
     if word.ends_with("ier") {
         add(format!("{}y", stem(3)));
-    } else if word.ends_with("er") && !doubled(&stem(2)) {
-        add(stem(2));
+    } else if word.ends_with("er") {
+        let base = stem(2);
+        if is_doubled(&base) {
+            add(base[..base.len() - 1].to_string());
+        } else {
+            add(base);
+        }
     }
     result
-}
-
-#[allow(dead_code)]
-fn _write_placeholder(path: &Path) -> Result<()> {
-    atomic_write(path, b"")
 }

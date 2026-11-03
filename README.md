@@ -2,121 +2,79 @@
 
 **English** | [简体中文](README_ZH-CN.md)
 
-[![Latest Release](https://img.shields.io/github/v/release/terasum/medict?display_name=tag&style=flat-square)](https://github.com/terasum/medict/releases/latest)
-[![Release](https://github.com/terasum/medict/actions/workflows/package-and-release.yaml/badge.svg)](https://github.com/terasum/medict/actions/workflows/package-and-release.yaml)
-[![CI](https://github.com/terasum/medict/actions/workflows/ci.yml/badge.svg)](https://github.com/terasum/medict/actions/workflows/ci.yml)
-[![GitHub Stars](https://img.shields.io/github/stars/terasum/medict?style=flat-square)](https://github.com/terasum/medict/stargazers)
-[![License](https://img.shields.io/github/license/terasum/medict.svg?style=flat-square)](LICENSE)
+[![Latest Release](https://img.shields.io/github/v/release/LucasChan02/medict?display_name=tag&style=flat-square)](https://github.com/LucasChan02/medict/releases/latest)
+[![Release](https://github.com/LucasChan02/medict/actions/workflows/package-and-release.yaml/badge.svg)](https://github.com/LucasChan02/medict/actions/workflows/package-and-release.yaml)
+[![CI](https://github.com/LucasChan02/medict/actions/workflows/ci.yaml/badge.svg)](https://github.com/LucasChan02/medict/actions/workflows/ci.yaml)
+[![License](https://img.shields.io/github/license/LucasChan02/medict.svg?style=flat-square)](LICENSE)
 
-Medict is an offline dictionary application. It reads MDict and StarDict
-dictionaries. The desktop client uses Qt 6, Kirigami, and Qt WebEngine. It
-follows the KDE Human Interface Guidelines and uses the active Plasma style
-and Breeze icons when available. A local Go process reads the dictionary files
-and supplies the control API.
+Medict is an offline dictionary for MDict and StarDict files. Version 5 is a
+complete Rust rewrite:
 
-The current stable release is **v4.0.2**.
+- `medict-core` parses dictionaries, renders entries, stores notebooks,
+  downloads ECDICT, exports Anki packages, and serves dictionary resources.
+- `medict-app` binds the Rust core to QML through Qt Bridge. It contains no C++
+  application code and starts no separate backend process.
+- The QML interface uses Kirigami, Plasma controls, Breeze icons, and the
+  active KDE color scheme.
+
+The current release is **v5.0.0**.
 
 ## Features
 
-### Interface
-
-- Uses a Kirigami global drawer and adaptive page layout.
-- Uses Plasma colors, controls, and Breeze icons on KDE. Other desktops use the
-  native Qt Quick style and embedded Breeze icons.
-- Provides dedicated lookup, notebook, settings, CSS editor, and About pages.
-
-### Lookup
-
-- Reads MDict v1.x and v2.0 `.mdx` files and their `.mdd` resources.
-- Reads StarDict `.ifo`, `.idx`, `.dict`, and `.dict.dz` files.
-- Includes a compact offline ECDICT English-Chinese dictionary.
-- Downloads the complete ECDICT data from Settings. The download needs network
-  access. Lookup remains offline after the install.
-- Provides prefix suggestions, fuzzy search, and direct lookup.
-- Looks up a word in one dictionary or in all selected dictionaries.
-- Saves the active dictionary selection between sessions.
-- Shows dictionary CSS, JavaScript, images, fonts, and audio in Qt WebEngine.
-- Follows `entry://` links and `@@@LINK=` redirects.
-- Keeps back and forward history.
-- Changes definition zoom from 80% to 160% and saves the setting.
-
-### Dictionary tools
-
-- Scans the dictionary folder at startup and on demand.
-- Optionally follows symbolic links.
-- Rebuilds the keyword index for one dictionary.
-- Edits a CSS override for each dictionary.
-- Previews CSS changes in the open definition pages.
-- Exports the current entry as a self-contained HTML file.
-
-### Vocabulary notebooks
-
-- Saves the current word to the default notebook.
-- Creates, renames, and deletes notebooks.
-- Sets the default notebook.
-- Keeps an HTML snapshot of each saved entry.
-- Opens a saved word directly from the notebook.
-- Exports all words or one notebook to Anki `.apkg` format.
+- MDict 1.x and 2.0 `.mdx` files with `.mdd` resources.
+- StarDict `.ifo`, `.idx`, `.dict`, `.dict.dz`, and `.res` files.
+- Bundled ECDICT English-Chinese dictionary, with optional full ECDICT install.
+- Exact, prefix, case-variant, and fuzzy lookup.
+- Single-dictionary and multi-dictionary lookup.
+- Dictionary CSS, JavaScript, images, fonts, and audio in Qt WebEngine.
+- `entry://` links, `@@@LINK=` redirects, double-click lookup, and audio.
+- Back and forward history and persistent definition zoom.
+- Recursive dictionary scan, optional symlink following, and index rebuild.
+- Per-dictionary CSS overrides with live preview and HTML entry export.
+- Vocabulary notebooks with HTML snapshots and Anki `.apkg` export.
+- Kirigami global drawer, adaptive pages, Plasma theme integration, and Breeze
+  icon names.
+- All dictionary, database, network, and export work runs off the Qt UI thread.
 
 ## Download
 
-Download the latest release from
-[GitHub Releases](https://github.com/terasum/medict/releases/latest).
-GitHub Actions builds every release package.
+GitHub Actions builds every package. Local builds are not used for release
+artifacts.
 
 | Platform | Package |
 | --- | --- |
-| Windows x86_64 | `Medict-4.0.2-windows-x86_64-setup.exe` |
-| Linux x86_64 | `Medict-4.0.2-linux-x86_64.AppImage` |
-| Linux x86_64 | `Medict-4.0.2-linux-x86_64.flatpak` |
+| Windows x86_64 | `Medict-5.0.0-windows-x86_64-setup.exe` |
+| Linux x86_64 | `Medict-5.0.0-linux-x86_64.AppImage` |
+| Linux x86_64 | `Medict-5.0.0-linux-x86_64.flatpak` |
 
 ### Windows
 
-Run `Medict-4.0.2-windows-x86_64-setup.exe`. The installer does not require administrator
-rights. It installs Medict and the `medictd.exe` dictionary engine.
+Run the installer. It installs Medict, Qt, Kirigami, and Qt WebEngine. The
+installer requests no administrator rights by default.
 
 ### Linux AppImage
 
-Make the AppImage executable and run it:
-
 ```bash
-chmod +x Medict-4.0.2-linux-x86_64.AppImage
-./Medict-4.0.2-linux-x86_64.AppImage
+chmod +x Medict-5.0.0-linux-x86_64.AppImage
+./Medict-5.0.0-linux-x86_64.AppImage
 ```
 
-The AppImage includes Medict, the Go dictionary engine, Qt 6, Qt WebEngine, and
-Kirigami. It does not need a separate Qt or KDE development installation.
-Plasma desktop integration uses the host desktop when it is available.
-
-Some Linux systems block unprivileged user namespaces. On these systems, the
-definition area can stay empty. Start the AppImage with this command:
-
-```bash
-QTWEBENGINE_DISABLE_SANDBOX=1 ./Medict-4.0.2-linux-x86_64.AppImage
-```
-
-This command disables the Qt WebEngine sandbox. Use it only when the default
-start fails.
+The AppImage bundles the runtime libraries required to show the interface. On
+KDE Plasma it also uses the host Plasma theme and icon integration.
 
 ### Linux Flatpak
 
-Install the Flatpak package:
-
 ```bash
-flatpak install Medict-4.0.2-linux-x86_64.flatpak
+flatpak install Medict-5.0.0-linux-x86_64.flatpak
 flatpak run io.github.terasum.Medict
 ```
 
-The Flatpak uses the KDE runtime and the Qt WebEngine BaseApp. It keeps the
-Flatpak sandbox and the Qt WebEngine sandbox.
+The Flatpak uses the KDE runtime and the Qt WebEngine BaseApp.
 
-## Install Dictionaries
+## Dictionaries
 
-Medict treats one directory as one dictionary. Open **Settings**, then select
-**Open folder**. The button opens the dictionary directory for the current
-system.
-
-Put each dictionary in its own subdirectory:
+Medict treats one directory as one dictionary and scans subdirectories of the
+dictionary folder. Open **Settings → Open dictionary folder** to find it.
 
 ```text
 dicts/
@@ -127,100 +85,73 @@ dicts/
 └── StarDictExample/
     ├── example.ifo
     ├── example.idx
-    └── example.dict.dz
+    ├── example.dict.dz
+    └── example.res/
 ```
 
-Medict scans subdirectories for dictionary files. Use **Dictionaries**,
-**Refresh dictionaries** after you add files.
+Use **Refresh dictionaries** after adding files.
 
-### Dictionary File Rules
+## Architecture
 
-| Type | Required files | Optional files |
-| --- | --- | --- |
-| MDict | One `.mdx` file | One or more `.mdd` files in the same directory |
-| StarDict | `.ifo`, `.idx`, and one `.dict` or `.dict.dz` file | `cover.jpg` or `cover.png` |
+```text
+QML / Kirigami
+      │  properties, slots, signals
+Qt Bridge singleton controller
+      │
+Rust `medict-core`
+      ├── mdictlib: MDict parser
+      ├── rusqlite: ECDICT + notebooks + Anki
+      ├── Rust StarDict reader and fuzzy search
+      ├── loopback content server with a random token
+      └── worker threads for every blocking operation
+```
 
-Dictionary content and licensing belong to each dictionary provider. Use only
-dictionary files that you have permission to use.
+The local HTTP server serves dictionary pages and resources to Qt WebEngine. It
+binds only to `127.0.0.1` and uses a new random URL token for each process. The
+control path is not HTTP: QML calls the Qt Bridge controller directly, and the
+controller dispatches work to Rust workers.
 
-## Privacy and Security
+Kirigami is a QML framework. A Kirigami interface therefore needs QML
+declarations; the application and backend code is Rust, and the project has no
+C++ application source.
 
-The Qt client does not send search requests to the internet. The Go engine
-listens only on `127.0.0.1` and uses a random token for each start. Qt starts
-the engine and stops it when the application exits.
+## Release Process
 
-The complete ECDICT install uses network access to download dictionary data.
-Dictionary HTML can load local resources from the engine. The application
-opens external HTTP or HTTPS links in the system browser.
+`VERSION` is the single source for the workspace version and release tag. It
+uses a three-segment `x.y.z` format.
+
+1. Choose the change level:
+   - major for architecture or incompatible behavior changes;
+   - minor for compatible features;
+   - patch for compatible fixes.
+2. Update `VERSION`, `Cargo.toml`, `CHANGELOG.md`, the AppStream release entry,
+   and the Inno Setup fallback.
+3. Push a matching tag, for example `v5.0.0`.
+4. The release workflow builds Windows x86_64, Linux x86_64 AppImage, and Linux
+   x86_64 Flatpak packages.
+5. Check the published GitHub Release.
+
+A manual workflow run creates a draft release. A tag push publishes it. Asset
+names follow `Medict-<version>-<os>-<arch>.<format>`.
 
 ## Development
 
-The release path uses GitHub Actions. Release packages come from the
-`package-and-release.yaml` workflow. The repository does not use local builds
-for release artifacts.
+The release path is GitHub Actions only:
 
-### Components
+- `.github/workflows/ci.yaml` checks the Rust workspace.
+- `.github/workflows/package-and-release.yaml` creates release packages.
 
-- `qt/`: Qt 6 Kirigami client.
-- `cmd/medictd/`: headless Go dictionary engine.
-- `internal/desktopapi/`: token-protected control API.
-- `pkg/backserver/`: dictionary HTTP server.
-- `packaging/`: Linux, Flatpak, and Windows package files.
+Requirements are Rust stable, Qt 6.10 or later with Qt Quick and Qt WebEngine,
+KDE Frameworks with Kirigami, CMake, Ninja, and a supported C++ toolchain. Qt
+Bridge needs `qmake` in `PATH`.
 
-### Requirements
+## Privacy
 
-- Go 1.25 or later.
-- Qt 6.10 or later with Qml, Quick Controls 2, Network, SVG, and WebEngine
-  Quick.
-- KDE Frameworks 6.31 or later, including Kirigami.
-- CMake 3.30 or later.
-- Windows with Visual Studio 2022, or Linux with a C++17 compiler.
-
-### Architecture
-
-The Qt client starts `medictd` with port `0`. The engine binds to a free
-loopback port. It prints one `MEDICT_READY` JSON line with the port, static
-URL, API URL, token, version, and configuration directory. Qt uses the static
-URL for dictionary pages and the token-protected API for control requests.
-
-`medictd` watches standard input and exit signals. The Qt client closes the
-standard input pipe during shutdown. The engine then stops the HTTP server and
-closes the dictionary and notebook stores.
-
-### Release Process
-
-1. Update `VERSION` with a three-segment version. Use a patch bump for build
-   and packaging fixes, a minor bump for compatible features, and a major bump
-   for incompatible changes. Update the matching release entry in
-   `packaging/linux/io.github.terasum.Medict.metainfo.xml`, the fallback in
-   `packaging/windows/medict.iss`, and `CHANGELOG.md`. Compare the result with
-   the upstream `terasum/medict` releases before you release.
-2. Push a tag that matches `VERSION`, such as `v4.0.2`.
-3. Wait for the Release workflow to build the three packages.
-4. Check the GitHub Release.
-
-A manual workflow run creates a draft release. A tag push publishes the
-release. Release files use
-`Medict-<version>-<os>-<arch>.<format>`.
-
-## CI
-
-The CI workflow runs these checks:
-
-- Go build, vet, and tests.
-- Qt Linux build with Qt 6.10, Kirigami 6.31, and Qt WebEngine.
-- Qt Windows build with Qt 6.10, Kirigami 6.31, MSVC 2022, and Qt WebEngine.
-
-## Roadmap
-
-- Full-text search in all definitions.
-- Inflection and Chinese variant fallback for missing entries.
-- More performance work for large dictionaries.
-- MDX packing and unpacking tools.
-- A configurable resource extraction directory.
-
-See [GitHub Issues](https://github.com/terasum/medict/issues) for current work.
+Medict does not send lookup requests to the internet. The content server is
+loopback-only. The full ECDICT install is the only feature that downloads data.
+Dictionary pages can open external HTTP or HTTPS links only through the system
+browser.
 
 ## License
 
-Medict uses the [GNU General Public License v3.0](LICENSE).
+Medict uses the [GNU General Public License v3.0 or later](LICENSE).

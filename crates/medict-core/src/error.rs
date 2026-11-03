@@ -16,6 +16,8 @@ pub enum MedictError {
     Network(String),
     #[error("archive error: {0}")]
     Archive(String),
+    #[error("CSV error: {0}")]
+    Csv(String),
 }
 
 pub type Result<T> = std::result::Result<T, MedictError>;
@@ -47,5 +49,11 @@ impl From<zip::result::ZipError> for MedictError {
 impl From<ureq::Error> for MedictError {
     fn from(error: ureq::Error) -> Self {
         Self::Network(error.to_string())
+    }
+}
+
+impl From<csv::Error> for MedictError {
+    fn from(error: csv::Error) -> Self {
+        Self::Csv(error.to_string())
     }
 }

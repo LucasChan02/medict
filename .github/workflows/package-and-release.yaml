@@ -1,7 +1,5 @@
 name: Release
 
-# Push a v* tag to publish a release. Run the workflow manually to make a
-# draft release for inspection without publishing it.
 on:
   push:
     tags:
@@ -9,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release tag; it must match VERSION, for example v4.0.2'
+        description: 'Release tag. It must match VERSION, for example v5.0.0'
         required: true
-        default: 'v4.0.2'
+        default: 'v5.0.0'
 
 permissions:
   contents: write
@@ -49,22 +47,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version: '1.25.x'
+      - name: Set up MSVC
+        shell: pwsh
+        run: ./packaging/ci/setup-msvc.ps1
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Set up Qt
         uses: jurplel/install-qt-action@v4.5.0
         with:
           version: '6.10.0'
           arch: win64_msvc2022_64
-          modules: 'qtwebengine qtwebchannel qtpositioning qtserialport qtshadertools'
+          modules: 'qtwebengine qtwebchannel qtpositioning qtshadertools'
           cache: true
 
-      - name: Set up MSVC
+      - name: Add Qt to PATH
         shell: pwsh
-        run: ./packaging/ci/setup-msvc.ps1
+        run: '"$env:QT_ROOT_DIR\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append'
 
       - name: Cache ECM and Kirigami
         uses: actions/cache@v6
@@ -72,7 +72,7 @@ jobs:
           path: |
             build/downloads
             build/kf6-prefix
-          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-msvc2022-v3
+          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-msvc2022-rust-v1
 
       - name: Download ECM and Kirigami sources
         shell: pwsh
@@ -81,36 +81,25 @@ jobs:
 
       - name: Build ECM
         shell: pwsh
-        timeout-minutes: 5
+        timeout-minutes: 8
         run: ./packaging/ci/build-kirigami.ps1 -Stage ECM
 
       - name: Build Kirigami
         shell: pwsh
-        timeout-minutes: 20
+        timeout-minutes: 25
         run: ./packaging/ci/build-kirigami.ps1 -Stage Kirigami
 
-      - name: Build dictionary backend
+      - name: Generate Cargo lockfile
+        shell: pwsh
+        run: cargo generate-lockfile
+
+      - name: Build Rust application
         shell: pwsh
         run: |
           $packageVersion = (Get-Content -LiteralPath VERSION -Raw).Trim()
           "PACKAGE_VERSION=$packageVersion" >> $env:GITHUB_ENV
-          New-Item -ItemType Directory -Force build | Out-Null
-          go build -trimpath `
-            -ldflags "-s -w -H=windowsgui -X main.Version=$env:VERSION" `
-            -o build/medictd.exe ./cmd/medictd
-
-      - name: Configure Qt client
-        shell: pwsh
-        run: |
-          cmake -S qt -B build/qt -G Ninja `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR;$PWD/build/kf6-prefix" `
-            -DMEDICT_BACKEND_BINARY="$PWD/build/medictd.exe" `
-            -DMEDICT_VERSION="$env:PACKAGE_VERSION"
-
-      - name: Build Qt client
-        shell: pwsh
-        run: cmake --build build/qt --parallel
+          "QML_IMPORT_PATH=$PWD\build\kf6-prefix\qml;$env:QT_ROOT_DIR\qml" >> $env:GITHUB_ENV
+          cargo build --release --locked -p medict_app --bin medict
 
       - name: Stage application
         shell: pwsh
@@ -120,77 +109,64 @@ jobs:
           $stage = Join-Path $PWD 'stage'
           $kf6 = Join-Path $PWD 'build/kf6-prefix'
           $kf6Qml = Join-Path $kf6 'qml'
-          if (-not (Test-Path -LiteralPath (Join-Path $kf6Qml 'org/kde/kirigami/qmldir'))) {
-            throw "Kirigami QML module is missing from $kf6Qml."
-          }
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          Copy-Item -LiteralPath 'target\release\medict.exe' -Destination (Join-Path $stage 'Medict.exe') -Force
 
-          cmake --install build/qt --prefix $stage
-          if ($LASTEXITCODE -ne 0) {
-            throw "Installing the Qt client failed."
+          New-Item -ItemType Directory -Force (Join-Path $stage 'qml') | Out-Null
+          if (Test-Path -LiteralPath $kf6Qml) {
+            Copy-Item -Path (Join-Path $kf6Qml '*') -Destination (Join-Path $stage 'qml') -Recurse -Force
           }
-
-          New-Item -ItemType Directory -Force "$stage\qml" | Out-Null
-          Copy-Item -Path (Join-Path $kf6Qml '*') -Destination "$stage\qml" `
-            -Recurse -Force
           foreach ($runtimeDir in @($kf6, (Join-Path $kf6 'bin'), (Join-Path $kf6 'lib'))) {
             if (Test-Path -LiteralPath $runtimeDir) {
               Get-ChildItem -LiteralPath $runtimeDir -File -Filter '*.dll' |
-                ForEach-Object {
-                  Copy-Item -LiteralPath $_.FullName -Destination $stage -Force
-                }
+                ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $stage -Force }
             }
           }
 
-          $env:PATH = "$kf6\bin;$kf6\lib;$kf6;$env:PATH"
+          $env:PATH = "$env:QT_ROOT_DIR\bin;$kf6\bin;$kf6\lib;$kf6;$env:PATH"
           $env:QML_IMPORT_PATH = "$stage\qml;$env:QT_ROOT_DIR\qml"
           $env:QML2_IMPORT_PATH = $env:QML_IMPORT_PATH
           & "$env:QT_ROOT_DIR\bin\windeployqt.exe" `
             --release `
             --compiler-runtime `
-            --qmldir "$PWD\qt\qml" `
+            --qmldir "$PWD\crates\medict-app\src\qml" `
             --dir $stage `
             "$stage\Medict.exe"
           if ($LASTEXITCODE -ne 0) {
-            throw "windeployqt failed."
+            throw 'windeployqt failed.'
           }
 
-          Copy-Item -Path (Join-Path $kf6Qml '*') -Destination "$stage\qml" `
-            -Recurse -Force
+          if (Test-Path -LiteralPath $kf6Qml) {
+            Copy-Item -Path (Join-Path $kf6Qml '*') -Destination (Join-Path $stage 'qml') -Recurse -Force
+          }
           foreach ($runtimeDir in @($kf6, (Join-Path $kf6 'bin'), (Join-Path $kf6 'lib'))) {
             if (Test-Path -LiteralPath $runtimeDir) {
               Get-ChildItem -LiteralPath $runtimeDir -File -Filter '*.dll' |
-                ForEach-Object {
-                  Copy-Item -LiteralPath $_.FullName -Destination $stage -Force
-                }
+                ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $stage -Force }
             }
           }
 
-          $kirigamiQmldir = Join-Path $stage 'qml/org/kde/kirigami/qmldir'
-          if (-not (Test-Path -LiteralPath $kirigamiQmldir)) {
-            throw "The staged application is missing $kirigamiQmldir."
-          }
-          if (-not (Get-ChildItem -LiteralPath (Join-Path $stage 'qml/org/kde/kirigami') `
-                  -Recurse -File -Filter '*plugin*.dll')) {
-            throw "The staged application is missing the Kirigami QML plugin."
-          }
-          if (-not (Get-ChildItem -LiteralPath $stage -File -Filter '*Kirigami*.dll')) {
-            throw "The staged application is missing the Kirigami runtime library."
-          }
-          foreach ($requiredFile in @(
+          foreach ($required in @(
               'Qt6Core.dll',
               'Qt6Qml.dll',
+              'Qt6Quick.dll',
               'Qt6WebEngineCore.dll',
+              'Qt6WebEngineQuick.dll',
               'QtWebEngineProcess.exe',
+              'qml\org\kde\kirigami\qmldir',
               'resources\qtwebengine_resources.pak',
               'resources\icudtl.dat')) {
-            if (-not (Test-Path -LiteralPath (Join-Path $stage $requiredFile))) {
-              throw "The staged application is missing $requiredFile."
+            if (-not (Test-Path -LiteralPath (Join-Path $stage $required))) {
+              throw "The staged application is missing $required."
             }
           }
-
-          Get-ChildItem -LiteralPath $stage -Recurse -File |
-            Where-Object { $_.Name -match 'Kirigami|QtWebEngineProcess' } |
-            Select-Object FullName, Length
+          if (-not (Get-ChildItem -LiteralPath (Join-Path $stage 'qml\org\kde\kirigami') `
+                  -Recurse -File -Filter '*plugin*.dll')) {
+            throw 'The staged application is missing the Kirigami QML plugin.'
+          }
+          if (-not (Get-ChildItem -LiteralPath $stage -File -Filter '*Kirigami*.dll')) {
+            throw 'The staged application is missing the Kirigami runtime library.'
+          }
 
       - name: Smoke test staged application
         shell: pwsh
@@ -199,21 +175,28 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $env:QT_QUICK_BACKEND = 'software'
           $env:QTWEBENGINE_DISABLE_SANDBOX = '1'
-          $logPath = Join-Path $PWD 'stage/smoke-test.log'
+          $stdout = Join-Path $PWD 'stage/smoke-stdout.log'
+          $stderr = Join-Path $PWD 'stage/smoke-stderr.log'
           $process = Start-Process `
             -FilePath "$PWD\stage\Medict.exe" `
             -ArgumentList '--smoke-test' `
             -WindowStyle Hidden `
-            -Wait `
+            -RedirectStandardOutput $stdout `
+            -RedirectStandardError $stderr `
             -PassThru
-          $exitCode = $process.ExitCode
-          if (Test-Path -LiteralPath $logPath) {
-            Write-Host "--- Medict smoke-test log ---"
-            Get-Content -LiteralPath $logPath
-            Write-Host "--- End smoke-test log ---"
+          $finished = $process.WaitForExit(30000)
+          if (-not $finished) {
+            Stop-Process -Id $process.Id -Force
+            throw 'The staged application did not finish its QML smoke test.'
           }
-          if ($exitCode -ne 0) {
-            throw "The staged application could not load its QML interface (exit $exitCode)."
+          foreach ($log in @($stdout, $stderr)) {
+            if (Test-Path -LiteralPath $log) {
+              Write-Host "--- $log ---"
+              Get-Content -LiteralPath $log
+            }
+          }
+          if ($process.ExitCode -ne 0) {
+            throw "The staged application could not load its QML interface (exit $($process.ExitCode))."
           }
 
       - name: Build installer
@@ -223,11 +206,14 @@ jobs:
           $stage = (Resolve-Path stage).Path
           $dist = Join-Path $PWD 'dist'
           New-Item -ItemType Directory -Force $dist | Out-Null
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
+          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' `
             "/DMyAppVersion=$env:PACKAGE_VERSION" `
             "/DStageDir=$stage" `
             "/DOutputDir=$dist" `
-            "packaging\windows\medict.iss"
+            'packaging\windows\medict.iss'
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Inno Setup failed.'
+          }
 
       - name: Upload installer
         uses: actions/upload-artifact@v7
@@ -248,14 +234,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            build-essential \
             desktop-file-utils \
             libasound2 \
             libasound2-dev \
+            libclang-dev \
             libfuse2 \
             libgl1-mesa-dev \
             libnss3 \
             libnss3-dev \
-            libsqlite3-dev \
             libx11-xcb-dev \
             libxcb-cursor0 \
             libxcb-cursor-dev \
@@ -280,17 +267,15 @@ jobs:
             patchelf \
             xvfb
 
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version: '1.25.x'
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Set up Qt
         uses: jurplel/install-qt-action@v4.5.0
         with:
           version: '6.10.0'
           arch: linux_gcc_64
-          modules: 'qtwebengine qtwebchannel qtpositioning qtserialport qtshadertools'
+          modules: 'qtwebengine qtwebchannel qtpositioning qtshadertools'
           cache: true
 
       - name: Cache ECM and Kirigami
@@ -299,30 +284,19 @@ jobs:
           path: |
             build/downloads
             build/kf6-prefix
-          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-gcc-v2
+          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-gcc-rust-v1
 
       - name: Build ECM and Kirigami
         run: sh packaging/ci/build-kirigami.sh
 
-      - name: Build dictionary backend
+      - name: Build Rust application
         run: |
           export PACKAGE_VERSION="$(tr -d '[:space:]' < VERSION)"
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
-          mkdir -p build dist AppDir
-          go build -trimpath \
-            -ldflags "-s -w -X main.Version=$VERSION" \
-            -o build/medictd ./cmd/medictd
-
-      - name: Build Qt client
-        run: |
-          cmake -S qt -B build/qt -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=/usr \
-            -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR;$PWD/build/kf6-prefix" \
-            -DMEDICT_BACKEND_BINARY="$PWD/build/medictd" \
-            -DMEDICT_VERSION="$PACKAGE_VERSION"
-          cmake --build build/qt --parallel
-          DESTDIR="$PWD/AppDir" cmake --install build/qt
+          echo "$QT_ROOT_DIR/bin" >> "$GITHUB_PATH"
+          echo "LD_LIBRARY_PATH=$QT_ROOT_DIR/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+          cargo generate-lockfile
+          cargo build --release --locked -p medict_app --bin medict
 
       - name: Deploy Qt and Kirigami
         run: |
@@ -330,15 +304,10 @@ jobs:
           KIRIGAMI_PREFIX="$PWD/build/kf6-prefix"
           KIRIGAMI_QML="$KIRIGAMI_PREFIX/lib/qt6/qml/org/kde"
           test -f "$KIRIGAMI_QML/kirigami/qmldir"
-          test -d "$KIRIGAMI_QML"
 
-          install -d AppDir/usr/qml/org AppDir/usr/lib
+          install -d AppDir/usr/bin AppDir/usr/qml/org AppDir/usr/lib
+          install -Dm755 target/release/medict AppDir/usr/bin/medict
           cp -a "$KIRIGAMI_QML" AppDir/usr/qml/org/
-          kirigami_libs=$(find "$KIRIGAMI_PREFIX/lib" -maxdepth 1 \
-            \( -type f -o -type l \) \
-            \( -name 'libKirigami*.so*' -o -name 'libKF6Kirigami*.so*' \) \
-            -print | wc -l)
-          test "$kirigami_libs" -gt 0
           find "$KIRIGAMI_PREFIX/lib" -maxdepth 1 \( -type f -o -type l \) \
             \( -name 'libKirigami*.so*' -o -name 'libKF6Kirigami*.so*' \) \
             -exec cp -a -t AppDir/usr/lib {} +
@@ -351,12 +320,17 @@ jobs:
 
           export APPIMAGE_EXTRACT_AND_RUN=1
           export QMAKE="$QT_ROOT_DIR/bin/qmake"
-          export EXTRA_QT_MODULES="webenginecore"
-          export QML_SOURCES_PATHS="$PWD/qt/qml"
-          export QML_MODULES_PATHS="$KIRIGAMI_PREFIX/lib/qt6/qml"
-          export QML_IMPORT_PATH="$QML_MODULES_PATHS:$QT_ROOT_DIR/qml"
+          export EXTRA_QT_MODULES="webenginecore webenginequick webchannel positioning"
+          export QML_SOURCES_PATHS="$PWD/crates/medict-app/src/qml"
+          export QML_MODULES_PATHS="$KIRIGAMI_PREFIX/lib/qt6/qml:$QT_ROOT_DIR/qml"
+          export QML_IMPORT_PATH="$QML_MODULES_PATHS"
           export LD_LIBRARY_PATH="$KIRIGAMI_PREFIX/lib:$QT_ROOT_DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-          ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt
+          ./linuxdeploy-x86_64.AppImage \
+            --appdir AppDir \
+            --plugin qt \
+            --executable AppDir/usr/bin/medict \
+            --desktop-file packaging/linux/io.github.terasum.Medict.desktop \
+            --icon-file packaging/linux/io.github.terasum.Medict.png
 
       - name: Stage and verify AppImage runtime
         run: |
@@ -369,7 +343,6 @@ jobs:
           ln -sfn io.github.terasum.Medict.png AppDir/.DirIcon
 
           test -x AppDir/usr/bin/medict
-          test -f AppDir/usr/bin/qt.conf
           test -f AppDir/usr/qml/org/kde/kirigami/qmldir
           find AppDir/usr/qml/org/kde/kirigami -maxdepth 1 -type f \
             -name '*plugin*.so' -print -quit | grep -q .
@@ -390,6 +363,7 @@ jobs:
           curl -fL -o appimagetool-x86_64.AppImage \
             https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
+          mkdir -p dist
           ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool-x86_64.AppImage \
             AppDir "dist/Medict-${PACKAGE_VERSION}-linux-x86_64.AppImage"
           ls -lh dist/*.AppImage
@@ -423,22 +397,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y flatpak flatpak-builder
 
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version: '1.25.x'
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Build dictionary backend
+      - name: Prepare Cargo lockfile and vendored sources
+        run: |
+          cargo generate-lockfile
+          cargo vendor vendor
+
+      - name: Build Flatpak
         run: |
           export PACKAGE_VERSION="$(tr -d '[:space:]' < VERSION)"
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
           mkdir -p dist
-          go build -trimpath \
-            -ldflags "-s -w -X main.Version=$VERSION" \
-            -o medictd ./cmd/medictd
-
-      - name: Build Flatpak
-        run: |
           flatpak remote-add --user --if-not-exists flathub \
             https://flathub.org/repo/flathub.flatpakrepo
           flatpak-builder \
@@ -450,7 +421,6 @@ jobs:
             builddir \
             packaging/flatpak/io.github.terasum.Medict.yaml
           du -sh builddir/files repo
-          du -ah builddir/files | sort -rh | head -n 40
           flatpak build-bundle \
             --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo \
             repo \

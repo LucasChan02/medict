@@ -4,6 +4,40 @@ All notable changes to [Medict](https://github.com/terasum/medict) are recorded
 here. The most recent release is at the top. For the full history before
 v3.1.0, see `git log v3.0.1..HEAD`.
 
+## v5.0.0
+
+Major release. Medict is now a Rust application with a Qt Quick/Kirigami
+frontend. The Go backend, Wails shell, Vue frontend, Qt C++ controller, and
+their old build paths are removed.
+
+### Added
+- A Rust workspace with a reusable dictionary core and a Qt Bridge desktop
+  application. The Rust side owns dictionary parsing, search, persistence,
+  HTML rendering, resource serving, CSS overrides, ECDICT installation, and
+  Anki export.
+- A Qt Bridge singleton controller that exposes an asynchronous state model to
+  QML without a child backend process.
+- Test coverage for MDict, StarDict, ECDICT, and notebook persistence.
+
+### Changed
+- Every lookup, scan, notebook query, index rebuild, CSS operation, export,
+  and download runs in a Rust worker. The Qt event loop stays free to paint
+  and process input on Windows and Linux.
+- The interface uses Kirigami pages, Plasma controls, Breeze icon names, and
+  the active KDE color scheme.
+- Release packages are built directly from Cargo on GitHub Actions:
+  `Medict-5.0.0-windows-x86_64-setup.exe`,
+  `Medict-5.0.0-linux-x86_64.AppImage`, and
+  `Medict-5.0.0-linux-x86_64.flatpak`.
+- Qt WebEngine and Kirigami runtime components remain bundled for release
+  reliability. The packages no longer include a separate Go executable.
+
+### Fixed
+- Windows no longer waits for a separate backend process before the window can
+  respond.
+- The definition pane no longer depends on an old controller or a stale QML
+  resource layout.
+
 ## v4.0.2
 
 Patch release for the Windows installer and Linux AppImage runtime. This

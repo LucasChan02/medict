@@ -6,6 +6,8 @@ base: io.qt.qtwebengine.BaseApp
 base-version: "6.10"
 command: medict
 appstream-compose: false
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
 
 finish-args:
   - --share=network
@@ -25,34 +27,43 @@ modules:
   - name: medict
     buildsystem: simple
     build-commands:
-      - cmake -S qt -B qt-build -G Ninja
-        -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_INSTALL_PREFIX=/app
-        -DCMAKE_PREFIX_PATH=/app
-        -DMEDICT_BACKEND_BINARY=/run/build/medict/medictd
-      - cmake --build qt-build --parallel
-      - cmake --install qt-build
+      - mkdir -p /app/bin
+      - if [ -x /usr/lib/qt6/bin/qmake ]; then ln -sf /usr/lib/qt6/bin/qmake /app/bin/qmake; elif [ -x /usr/bin/qmake6 ]; then ln -sf /usr/bin/qmake6 /app/bin/qmake; fi
+      - . /usr/lib/sdk/rust-stable/enable.sh
+      - export PATH=/app/bin:$PATH
+      - cargo build --release --locked --offline
+        --config 'source.crates-io.replace-with="vendored-sources"'
+        --config 'source.vendored-sources.directory="vendor"'
+      - install -Dm755 target/release/medict /app/bin/medict
+      - install -Dm644 packaging/linux/io.github.terasum.Medict.desktop /app/share/applications/io.github.terasum.Medict.desktop
+      - install -Dm644 packaging/linux/io.github.terasum.Medict.metainfo.xml /app/share/metainfo/io.github.terasum.Medict.metainfo.xml
+      - install -Dm644 packaging/linux/io.github.terasum.Medict.png /app/share/icons/hicolor/256x256/apps/io.github.terasum.Medict.png
       - find /app/translations/qtwebengine_locales -type f -name '*.pak'
         ! -name 'en-US.pak' ! -name 'zh-CN.pak' ! -name 'zh-TW.pak' -delete
       - rm -f /app/lib/libexec/webenginedriver
         /app/resources/qtwebengine_devtools_resources.pak
     sources:
       - type: dir
-        path: ../../qt
-        dest: qt
+        path: ../../crates
+        dest: crates
+      - type: dir
+        path: ../../assets
+        dest: assets
       - type: dir
         path: ../../packaging
         dest: packaging
+      - type: dir
+        path: ../../vendor
+        dest: vendor
       - type: file
-        path: ../../build/appicon.png
-        dest: build
+        path: ../../Cargo.toml
+        dest-filename: Cargo.toml
       - type: file
-        path: ../../medictd
-        dest: .
-      - type: file
-        path: ../../LICENSE
-        dest-filename: LICENSE
+        path: ../../Cargo.lock
+        dest-filename: Cargo.lock
       - type: file
         path: ../../VERSION
         dest-filename: VERSION
-
+      - type: file
+        path: ../../LICENSE
+        dest-filename: LICENSE

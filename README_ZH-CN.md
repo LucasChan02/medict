@@ -2,115 +2,71 @@
 
 [English](README.md) | **简体中文**
 
-[![Latest Release](https://img.shields.io/github/v/release/terasum/medict?display_name=tag&style=flat-square)](https://github.com/terasum/medict/releases/latest)
-[![Release](https://github.com/terasum/medict/actions/workflows/package-and-release.yaml/badge.svg)](https://github.com/terasum/medict/actions/workflows/package-and-release.yaml)
-[![CI](https://github.com/terasum/medict/actions/workflows/ci.yml/badge.svg)](https://github.com/terasum/medict/actions/workflows/ci.yml)
-[![GitHub Stars](https://img.shields.io/github/stars/terasum/medict?style=flat-square)](https://github.com/terasum/medict/stargazers)
-[![License](https://img.shields.io/github/license/terasum/medict.svg?style=flat-square)](LICENSE)
+[![Latest Release](https://img.shields.io/github/v/release/LucasChan02/medict?display_name=tag&style=flat-square)](https://github.com/LucasChan02/medict/releases/latest)
+[![Release](https://github.com/LucasChan02/medict/actions/workflows/package-and-release.yaml/badge.svg)](https://github.com/LucasChan02/medict/actions/workflows/package-and-release.yaml)
+[![CI](https://github.com/LucasChan02/medict/actions/workflows/ci.yaml/badge.svg)](https://github.com/LucasChan02/medict/actions/workflows/ci.yaml)
 
-Medict 是一款离线词典应用，支持 MDict 和 StarDict 词典。桌面客户端使用
-Qt 6、Kirigami 和 Qt WebEngine，并遵循 KDE 人机界面指南。在 KDE 上使用
-当前 Plasma 样式和 Breeze 图标。本地 Go 进程读取词典文件，并提供控制 API。
+Medict 是一款离线词典应用，支持 MDict 和 StarDict。版本 5 是完全重写的
+Rust 应用：
 
-当前稳定版本为 **v4.0.2**。
+- `medict-core` 负责词典解析、搜索、HTML 渲染、生词本、ECDICT 下载、
+  Anki 导出和词典资源服务。
+- `medict-app` 使用 Qt Bridge 将 Rust 核心连接到 QML，不包含 C++ 应用代码，
+  也不启动独立的后端进程。
+- 界面使用 Kirigami、Plasma 控件、Breeze 图标和当前 KDE 配色方案。
+
+当前版本为 **v5.0.0**。
 
 ## 功能
 
-### 界面
-
-- 使用 Kirigami 全局抽屉和自适应页面布局。
-- 在 KDE 上使用 Plasma 颜色、控件和 Breeze 图标。其他桌面使用原生
-  Qt Quick 样式和内置 Breeze 图标。
-- 提供独立的查词、生词本、设置、CSS 编辑器和关于页面。
-
-### 查词
-
-- 读取 MDict v1.x 和 v2.0 的 `.mdx` 文件及 `.mdd` 资源。
-- 读取 StarDict 的 `.ifo`、`.idx`、`.dict` 和 `.dict.dz` 文件。
-- 内置精简版 ECDICT 英汉词典，可离线使用。
-- 可在设置中下载完整 ECDICT 数据。下载需要网络，安装后可离线查询。
-- 支持前缀建议、模糊搜索和直接查词。
-- 支持单词典查询和多词典同时查询。
-- 自动保存当前词典选择。
-- 使用 Qt WebEngine 显示词典 CSS、JavaScript、图片、字体和音频。
-- 支持 `entry://` 链接和 `@@@LINK=` 跳转。
-- 支持后退和前进历史。
-- 支持 80% 到 160% 的释义缩放，并保存缩放设置。
-
-### 词典工具
-
-- 在启动时或按需扫描词典目录。
-- 可选择是否跟随符号链接。
-- 可重建单个词典的关键词索引。
-- 可为每个词典编辑 CSS 覆盖样式。
-- 在已打开的释义页面中实时预览 CSS 修改。
-- 可将当前词条导出为独立 HTML 文件。
-
-### 生词本
-
-- 将当前单词保存到默认生词本。
-- 创建、重命名和删除生词本。
-- 设置默认生词本。
-- 为每个收藏词条保存 HTML 快照。
-- 从生词本直接打开收藏的单词。
-- 将全部生词或单个生词本导出为 Anki `.apkg` 文件。
+- MDict 1.x / 2.0 `.mdx` 和 `.mdd`。
+- StarDict `.ifo`、`.idx`、`.dict`、`.dict.dz` 和 `.res`。
+- 内置 ECDICT 英汉词典，可下载完整版。
+- 精确、前缀、大小写变体和模糊查询。
+- 单词典、多词典查询。
+- Qt WebEngine 显示词典 CSS、JavaScript、图片、字体和音频。
+- `entry://` 链接、`@@@LINK=` 跳转、双击查词和发音。
+- 前进/后退历史和释义缩放。
+- 词典目录扫描、符号链接选项和索引重建。
+- 单词典 CSS 覆盖和实时预览。
+- 生词本 HTML 快照和 Anki `.apkg` 导出。
+- Kirigami 自适应界面和 KDE HIG 布局。
+- 所有词典、数据库、网络和导出工作均在 Qt UI 线程之外运行。
 
 ## 下载
 
-请从 [GitHub Releases](https://github.com/terasum/medict/releases/latest)
-下载最新版本。所有发布包由 GitHub Actions 构建。
+所有发布包由 GitHub Actions 构建，不使用本地发布构建。
 
 | 平台 | 安装包 |
 | --- | --- |
-| Windows x86_64 | `Medict-4.0.2-windows-x86_64-setup.exe` |
-| Linux x86_64 | `Medict-4.0.2-linux-x86_64.AppImage` |
-| Linux x86_64 | `Medict-4.0.2-linux-x86_64.flatpak` |
+| Windows x86_64 | `Medict-5.0.0-windows-x86_64-setup.exe` |
+| Linux x86_64 | `Medict-5.0.0-linux-x86_64.AppImage` |
+| Linux x86_64 | `Medict-5.0.0-linux-x86_64.flatpak` |
 
 ### Windows
 
-运行 `Medict-4.0.2-windows-x86_64-setup.exe`。安装程序不需要管理员权限。它会安装 Medict
-和 `medictd.exe` 词典引擎。
+运行安装程序。安装包包含 Qt、Kirigami 和 Qt WebEngine。
 
 ### Linux AppImage
 
-为 AppImage 添加执行权限，然后启动：
-
 ```bash
-chmod +x Medict-4.0.2-linux-x86_64.AppImage
-./Medict-4.0.2-linux-x86_64.AppImage
+chmod +x Medict-5.0.0-linux-x86_64.AppImage
+./Medict-5.0.0-linux-x86_64.AppImage
 ```
-
-AppImage 包含 Medict、Go 词典引擎、Qt 6、Qt WebEngine 和 Kirigami。
-无需单独安装 Qt 或 KDE 开发环境。系统提供 KDE Plasma 桌面时，应用会使用
-该桌面的集成功能。
-
-部分 Linux 系统会禁用非特权用户命名空间。在这些系统上，释义区域可能为空。请
-用以下命令启动 AppImage：
-
-```bash
-QTWEBENGINE_DISABLE_SANDBOX=1 ./Medict-4.0.2-linux-x86_64.AppImage
-```
-
-该命令会关闭 Qt WebEngine 沙箱。仅在默认启动失败时使用。
 
 ### Linux Flatpak
 
-安装 Flatpak 包：
-
 ```bash
-flatpak install Medict-4.0.2-linux-x86_64.flatpak
+flatpak install Medict-5.0.0-linux-x86_64.flatpak
 flatpak run io.github.terasum.Medict
 ```
 
-Flatpak 包使用 KDE 运行时和 Qt WebEngine BaseApp。应用保留 Flatpak
-沙箱和 Qt WebEngine 沙箱。
+Flatpak 使用 KDE 运行时和 Qt WebEngine BaseApp。
 
-## 安装词典
+## 词典目录
 
-Medict 将一个目录视为一个词典。打开 **Settings**，然后选择
-**Open folder**。该按钮会打开当前系统的词典目录。
-
-请将每个词典放入独立子目录：
+一个目录视为一个词典。在 **Settings → Open dictionary folder** 打开词典目录，
+添加文件后使用 **Refresh dictionaries**。
 
 ```text
 dicts/
@@ -121,85 +77,36 @@ dicts/
 └── StarDictExample/
     ├── example.ifo
     ├── example.idx
-    └── example.dict.dz
+    ├── example.dict.dz
+    └── example.res/
 ```
 
-Medict 会扫描子目录中的词典文件。添加文件后，请选择
-**Dictionaries** 和 **Refresh dictionaries**。
+## 架构
 
-### 词典文件规则
+QML/Kirigami 通过 Qt Bridge 调用 Rust 单例控制器。控制器把耗时操作交给
+Rust 工作线程，并把 JSON 状态发给 QML。Qt WebEngine 通过仅绑定
+`127.0.0.1`、带随机令牌的本地 HTTP 服务加载词典页面和资源。
 
-| 类型 | 必需文件 | 可选文件 |
-| --- | --- | --- |
-| MDict | 一个 `.mdx` 文件 | 同目录下的一个或多个 `.mdd` 文件 |
-| StarDict | `.ifo`、`.idx` 和一个 `.dict` 或 `.dict.dz` 文件 | `cover.jpg` 或 `cover.png` |
+Kirigami 本身是 QML 框架，因此界面声明必须使用 QML；应用逻辑和后端均为
+Rust，项目不包含 C++ 应用源码。
 
-词典内容和授权归各词典提供者所有。请仅使用已获授权的词典文件。
+## 发布
 
-## 隐私与安全
+`VERSION` 使用三段式 `x.y.z`，同时作为 Cargo 工作区版本和发布标签。
 
-Qt 客户端不会将查词请求发送到互联网。Go 引擎只监听 `127.0.0.1`，并在每次
-启动时使用随机令牌。Qt 启动引擎，并在应用退出时停止引擎。
+1. 主版本用于架构或不兼容变更，次版本用于兼容功能，修订版本用于修复。
+2. 更新 `VERSION`、`Cargo.toml`、`CHANGELOG.md`、AppStream 和 Inno Setup。
+3. 推送匹配标签，例如 `v5.0.0`。
+4. 等待 GitHub Actions 构建 Windows EXE、AppImage 和 Flatpak。
+5. 检查 GitHub Release。
 
-完整 ECDICT 安装需要联网下载词典数据。词典 HTML 可从引擎加载本地资源。
-应用会在系统浏览器中打开外部 HTTP 或 HTTPS 链接。
+手动运行 Release 工作流会创建草稿 Release；推送标签会正式发布。
 
-## 开发
+## 隐私
 
-发布流程只使用 GitHub Actions。发布包由 `package-and-release.yaml`
-工作流构建。仓库不使用本地构建产物发布版本。
-
-### 组件
-
-- `qt/`：Qt 6 Kirigami 客户端。
-- `cmd/medictd/`：无界面 Go 词典引擎。
-- `internal/desktopapi/`：受令牌保护的控制 API。
-- `pkg/backserver/`：词典 HTTP 服务器。
-- `packaging/`：Linux、Flatpak 和 Windows 打包文件。
-
-### 架构
-
-Qt 客户端以端口 `0` 启动 `medictd`。引擎绑定一个空闲的本地回环端口。
-引擎输出一行 `MEDICT_READY` JSON，其中包含端口、静态 URL、API URL、
-令牌、版本和配置目录。Qt 使用静态 URL 加载词典页面，并使用受令牌保护的
-API 发送控制请求。
-
-`medictd` 监听标准输入和退出信号。关闭应用时，Qt 客户端关闭标准输入管道。
-随后引擎停止 HTTP 服务器，并关闭词典存储和生词本存储。
-
-### 发布流程
-
-1. 在 `VERSION` 中写入三段式版本号。构建和打包修复使用修订版本号升级，
-   兼容功能使用次版本号升级，不兼容变更使用主版本号升级。同时更新
-   `packaging/linux/io.github.terasum.Medict.metainfo.xml` 中对应的发布记录、
-   `packaging/windows/medict.iss` 中的默认值和 `CHANGELOG.md`。发布前请对照
-   上游 `terasum/medict` 的版本。
-2. 推送与 `VERSION` 匹配的标签，例如 `v4.0.2`。
-3. 等待 Release 工作流构建三个安装包。
-4. 检查 GitHub Release。
-
-手动运行工作流会创建草稿 Release。推送标签会发布 Release。发布文件使用
-`Medict-<version>-<os>-<arch>.<format>` 命名。
-
-## CI
-
-CI 工作流执行以下检查：
-
-- Go 构建、vet 和测试。
-- 使用 Qt 6.10、Kirigami 6.31 和 Qt WebEngine 构建 Linux 版 Qt 客户端。
-- 使用 Qt 6.10、Kirigami 6.31、MSVC 2022 和 Qt WebEngine 构建 Windows
-  版 Qt 客户端。
-
-## 路线图
-
-- 在所有释义中进行全文检索。
-- 为缺失词条增加词形和中文异体字回退。
-- 继续优化大型词典的性能。
-- 提供 MDX 打包和解包工具。
-- 支持自定义资源解压目录。
-
-当前工作请查看 [GitHub Issues](https://github.com/terasum/medict/issues)。
+查词请求不会发送到互联网。词典资源服务只监听本机回环地址。完整 ECDICT
+安装是唯一需要联网下载的数据功能。外部 HTTP/HTTPS 链接只由系统浏览器打开。
 
 ## 许可证
 
-Medict 使用 [GNU General Public License v3.0](LICENSE)。
+Medict 使用 [GNU General Public License v3.0 or later](LICENSE)。

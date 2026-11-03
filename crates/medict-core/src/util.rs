@@ -3,7 +3,6 @@ use std::fs;
 use std::io::{self, Write};
 use std::path::{Component, Path, PathBuf};
 
-use md5::{Digest, Md5};
 use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
 
 pub fn home_dir() -> io::Result<PathBuf> {
@@ -44,9 +43,7 @@ pub fn app_config_dir() -> io::Result<PathBuf> {
 
 pub fn stable_id(path: &Path) -> String {
     let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-    let mut hasher = Md5::new();
-    hasher.update(canonical.to_string_lossy().as_bytes());
-    format!("{:x}", hasher.finalize())
+    format!("{:x}", md5::compute(canonical.to_string_lossy().as_bytes()))
 }
 
 pub fn path_file_name(path: &Path) -> String {
