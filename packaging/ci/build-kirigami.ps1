@@ -66,6 +66,19 @@ function Get-VerifiedArchive {
     return $File
 }
 
+function Expand-Archive {
+    param(
+        [string]$Archive,
+        [string]$Destination
+    )
+
+    $Cmake = (Get-Command cmake).Source
+    & $Cmake -E chdir $Destination $Cmake -E tar xJf $Archive
+    if ($LASTEXITCODE -ne 0) {
+        throw "Extraction failed for $Archive."
+    }
+}
+
 $PrefixPath = "$env:QT_ROOT_DIR;$Prefix"
 $EcmSource = Join-Path $BuildRoot "extra-cmake-modules-$EcmVersion"
 $EcmBuild = Join-Path $BuildRoot "ecm-build"
@@ -84,17 +97,11 @@ if ($Stage -in @("All", "Download")) {
 
     if (-not (Test-Path -LiteralPath $EcmSource)) {
         Write-Phase "Extracting ECM"
-        tar -xJf $EcmFile -C $BuildRoot
-        if ($LASTEXITCODE -ne 0) {
-            throw "ECM extraction failed."
-        }
+        Expand-Archive -Archive $EcmFile -Destination $BuildRoot
     }
     if (-not (Test-Path -LiteralPath $KirigamiSource)) {
         Write-Phase "Extracting Kirigami"
-        tar -xJf $KirigamiFile -C $BuildRoot
-        if ($LASTEXITCODE -ne 0) {
-            throw "Kirigami extraction failed."
-        }
+        Expand-Archive -Archive $KirigamiFile -Destination $BuildRoot
     }
 }
 

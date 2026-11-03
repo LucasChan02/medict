@@ -124,7 +124,7 @@ jobs:
           path: |
             build/downloads
             build/kf6-prefix
-          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-msvc2022-v1
+          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-msvc2022-v2
 
       - name: Download ECM and Kirigami sources
         shell: pwsh
