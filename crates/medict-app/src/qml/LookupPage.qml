@@ -341,7 +341,9 @@ Kirigami.Page {
             Layout.fillWidth: true
             Layout.fillHeight: true
             currentIndex: page.definitions.length > 0
-                ? Math.max(0, definitionTabs.currentIndex)
+                ? Math.min(
+                    page.definitions.length - 1,
+                    Math.max(0, definitionTabs.currentIndex))
                 : -1
 
             Repeater {

@@ -28,15 +28,23 @@ impl EcdictBackend {
         let count: i64 =
             self.connection
                 .query_row("SELECT COUNT(*) FROM ecdict", [], |row| row.get(0))?;
-        let edition = self
-            .connection
-            .query_row(
-                "SELECT value FROM medict_meta WHERE key = 'edition'",
-                [],
-                |row| row.get::<_, String>(0),
-            )
-            .optional()?
-            .unwrap_or_else(|| "compact".to_string());
+        let has_metadata: i64 = self.connection.query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'medict_meta'",
+            [],
+            |row| row.get(0),
+        )?;
+        let edition = if has_metadata > 0 {
+            self.connection
+                .query_row(
+                    "SELECT value FROM medict_meta WHERE key = 'edition'",
+                    [],
+                    |row| row.get::<_, String>(0),
+                )
+                .optional()?
+                .unwrap_or_else(|| "compact".to_string())
+        } else {
+            "compact".to_string()
+        };
         Ok((edition, count))
     }
 

@@ -268,7 +268,6 @@ impl AppCore {
                     append_history(&mut runtime.ui, word);
                 }
                 runtime.config.set_string("lastword", word);
-                let _ = runtime.config.save();
             }
         }
         (sequence, self.snapshot())
@@ -363,6 +362,7 @@ impl AppCore {
                 } else {
                     format!("{word} — {found} of {} dictionaries", dictionaries.len())
                 };
+                let _ = runtime.config.save();
             }
         }
         Ok(Some(self.snapshot()))
