@@ -68,5 +68,5 @@ modules:
         dest: .
       - type: file
         path: ../../LICENSE
-        dest: LICENSE
+        dest-filename: LICENSE
 
