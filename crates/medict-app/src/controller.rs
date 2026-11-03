@@ -79,7 +79,7 @@ impl Controller {
 
             let word = core.last_word();
             if !word.is_empty() {
-                let (sequence, state) = core.begin_lookup(&word, false);
+                let (sequence, state) = core.begin_lookup(&word, true);
                 handle.invoke_mut(move |controller| controller.set_state_json(state));
                 let state = match core.lookup_word(&word, sequence) {
                     Ok(Some(state)) => state,

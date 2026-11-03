@@ -52,6 +52,7 @@ Kirigami.ApplicationWindow {
     }
 
     property string previewCss: ""
+    property int smokeStep: 0
 
     title: state.currentWord.length > 0
         ? qsTr("%1 — Medict").arg(state.currentWord)
@@ -306,9 +307,25 @@ Kirigami.ApplicationWindow {
     }
 
     Timer {
+        id: smokeTimer
+
         running: Controller.smokeTest
-        interval: 1800
-        repeat: false
-        onTriggered: Qt.quit()
+        interval: 350
+        repeat: true
+        onTriggered: {
+            root.smokeStep += 1;
+            if (root.smokeStep === 1) {
+                root.openSettings();
+            } else if (root.smokeStep === 2) {
+                root.openNotebooks();
+            } else if (root.smokeStep === 3) {
+                root.openCssEditor();
+            } else if (root.smokeStep === 4) {
+                root.openAbout();
+            } else {
+                smokeTimer.stop();
+                Qt.quit();
+            }
+        }
     }
 }

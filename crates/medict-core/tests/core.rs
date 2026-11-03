@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use medict_core::bookmarks::BookmarkStore;
+use medict_core::bookmarks::ExportRow;
 use medict_core::dictionary::{open_ecdict, open_mdict, open_stardict};
 
 fn preset(name: &str) -> PathBuf {
@@ -58,4 +59,20 @@ fn stores_and_removes_notebooks_and_bookmarks() {
     store.rename_notebook(&extra.id, "Renamed").unwrap();
     store.remove("word", "dict", &default_id).unwrap();
     assert!(store.all().unwrap().is_empty());
+}
+
+#[test]
+fn exports_a_valid_anki_package_with_media() {
+    let rows = vec![ExportRow {
+        word: "apple".to_string(),
+        dict_name: "Test dictionary".to_string(),
+        notebook_name: "Default".to_string(),
+        html: r#"<html><body><p>apple</p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII="></body></html>"#.to_string(),
+    }];
+    let package = medict_core::anki::build(&rows).unwrap();
+    let reader = std::io::Cursor::new(package);
+    let mut archive = zip::ZipArchive::new(reader).unwrap();
+    assert!(archive.by_name("collection.anki2").is_ok());
+    assert!(archive.by_name("media").is_ok());
+    assert!(archive.by_name("0").is_ok());
 }
