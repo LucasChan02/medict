@@ -200,8 +200,13 @@ jobs:
           $env:QT_QUICK_BACKEND = 'software'
           $env:QTWEBENGINE_DISABLE_SANDBOX = '1'
           $logPath = Join-Path $PWD 'stage/smoke-test.log'
-          & "$PWD\stage\Medict.exe" --smoke-test
-          $exitCode = $LASTEXITCODE
+          $process = Start-Process `
+            -FilePath "$PWD\stage\Medict.exe" `
+            -ArgumentList '--smoke-test' `
+            -WindowStyle Hidden `
+            -Wait `
+            -PassThru
+          $exitCode = $process.ExitCode
           if (Test-Path -LiteralPath $logPath) {
             Write-Host "--- Medict smoke-test log ---"
             Get-Content -LiteralPath $logPath
