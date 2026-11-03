@@ -37,7 +37,7 @@ jobs:
         with:
           version: '6.10.0'
           arch: win64_msvc2022_64
-          modules: 'qtwebengine qtwebchannel qtpositioning qtshadertools'
+          modules: 'qtwebengine qtwebchannel qtpositioning qtserialport qtshadertools'
           cache: true
 
       - name: Set up MSVC
@@ -158,7 +158,7 @@ jobs:
         with:
           version: '6.10.0'
           arch: linux_gcc_64
-          modules: 'qtwebengine qtwebchannel qtpositioning qtshadertools'
+          modules: 'qtwebengine qtwebchannel qtpositioning qtserialport qtshadertools'
           cache: true
 
       - name: Build ECM and Kirigami
@@ -183,7 +183,6 @@ jobs:
             -DMEDICT_VERSION="$PACKAGE_VERSION"
           cmake --build build/qt --parallel
           DESTDIR="$PWD/AppDir" cmake --install build/qt
-          DESTDIR="$PWD/AppDir" cmake --install build/kirigami-build --prefix /usr
 
       - name: Deploy Qt libraries
         run: |
@@ -196,7 +195,7 @@ jobs:
           export QMAKE="$QT_ROOT_DIR/bin/qmake"
           export EXTRA_QT_MODULES="webenginecore"
           export QML_SOURCES_PATHS="$PWD/qt/qml"
-          export QML_IMPORT_PATH="$PWD/build/kf6-prefix/lib/qt6/qml:$QT_ROOT_DIR/qml"
+          export QML_MODULES_PATHS="$PWD/build/kf6-prefix/lib/qt6/qml"
           export LD_LIBRARY_PATH="$PWD/build/kf6-prefix/lib:$QT_ROOT_DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
           ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt
 

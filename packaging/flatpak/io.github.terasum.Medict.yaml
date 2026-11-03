@@ -66,4 +66,7 @@ modules:
       - type: file
         path: ../../medictd
         dest: .
+      - type: file
+        path: ../../LICENSE
+        dest: LICENSE
 

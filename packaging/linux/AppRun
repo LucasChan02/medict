@@ -4,7 +4,8 @@ set -eu
 HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
 export QT_QPA_PLATFORMTHEME="${QT_QPA_PLATFORMTHEME:-kde}"
-export QML_IMPORT_PATH="$HERE/usr/lib/qt6/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}"
+export QML_IMPORT_PATH="$HERE/usr/qml:$HERE/usr/lib/qt6/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}"
+export QML2_IMPORT_PATH="$QML_IMPORT_PATH${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}"
 export QTWEBENGINEPROCESS_PATH="$HERE/usr/libexec/QtWebEngineProcess"
 export QTWEBENGINE_RESOURCES_PATH="$HERE/usr/resources"
 export QTWEBENGINE_LOCALES_PATH="$HERE/usr/translations/qtwebengine_locales"
