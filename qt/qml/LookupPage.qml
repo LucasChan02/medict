@@ -447,7 +447,7 @@ Kirigami.Page {
         closePolicy: Controls.Popup.CloseOnEscape
             | Controls.Popup.CloseOnPressOutside
 
-        contentItem: Controls.ListView {
+        contentItem: ListView {
             implicitHeight: Math.min(contentHeight, Kirigami.Units.gridUnit * 16)
             clip: true
             model: appController.suggestions
