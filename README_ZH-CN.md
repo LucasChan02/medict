@@ -12,7 +12,7 @@ Medict 是一款离线词典应用，支持 MDict 和 StarDict 词典。桌面�
 Qt 6、Kirigami 和 Qt WebEngine，并遵循 KDE 人机界面指南。在 KDE 上使用
 当前 Plasma 样式和 Breeze 图标。本地 Go 进程读取词典文件，并提供控制 API。
 
-当前稳定版本为 **v4.0.1**。
+当前稳定版本为 **v4.0.2**。
 
 ## 功能
 
@@ -62,13 +62,13 @@ Qt 6、Kirigami 和 Qt WebEngine，并遵循 KDE 人机界面指南。在 KDE �
 
 | 平台 | 安装包 |
 | --- | --- |
-| Windows x86_64 | `Medict-4.0.1-windows-x86_64-setup.exe` |
-| Linux x86_64 | `Medict-4.0.1-linux-x86_64.AppImage` |
-| Linux x86_64 | `Medict-4.0.1-linux-x86_64.flatpak` |
+| Windows x86_64 | `Medict-4.0.2-windows-x86_64-setup.exe` |
+| Linux x86_64 | `Medict-4.0.2-linux-x86_64.AppImage` |
+| Linux x86_64 | `Medict-4.0.2-linux-x86_64.flatpak` |
 
 ### Windows
 
-运行 `Medict-4.0.1-windows-x86_64-setup.exe`。安装程序不需要管理员权限。它会安装 Medict
+运行 `Medict-4.0.2-windows-x86_64-setup.exe`。安装程序不需要管理员权限。它会安装 Medict
 和 `medictd.exe` 词典引擎。
 
 ### Linux AppImage
@@ -76,19 +76,19 @@ Qt 6、Kirigami 和 Qt WebEngine，并遵循 KDE 人机界面指南。在 KDE �
 为 AppImage 添加执行权限，然后启动：
 
 ```bash
-chmod +x Medict-4.0.1-linux-x86_64.AppImage
-./Medict-4.0.1-linux-x86_64.AppImage
+chmod +x Medict-4.0.2-linux-x86_64.AppImage
+./Medict-4.0.2-linux-x86_64.AppImage
 ```
 
-AppImage 包含 Medict 和 Go 词典引擎。它使用主机系统中的 Qt 6.10、
-Qt WebEngine 和 Kirigami 库。启动前，请安装提供这些库的最新 KDE
-Plasma 6 桌面环境。
+AppImage 包含 Medict、Go 词典引擎、Qt 6、Qt WebEngine 和 Kirigami。
+无需单独安装 Qt 或 KDE 开发环境。系统提供 KDE Plasma 桌面时，应用会使用
+该桌面的集成功能。
 
 部分 Linux 系统会禁用非特权用户命名空间。在这些系统上，释义区域可能为空。请
 用以下命令启动 AppImage：
 
 ```bash
-QTWEBENGINE_DISABLE_SANDBOX=1 ./Medict-4.0.1-linux-x86_64.AppImage
+QTWEBENGINE_DISABLE_SANDBOX=1 ./Medict-4.0.2-linux-x86_64.AppImage
 ```
 
 该命令会关闭 Qt WebEngine 沙箱。仅在默认启动失败时使用。
@@ -98,7 +98,7 @@ QTWEBENGINE_DISABLE_SANDBOX=1 ./Medict-4.0.1-linux-x86_64.AppImage
 安装 Flatpak 包：
 
 ```bash
-flatpak install Medict-4.0.1-linux-x86_64.flatpak
+flatpak install Medict-4.0.2-linux-x86_64.flatpak
 flatpak run io.github.terasum.Medict
 ```
 
@@ -174,7 +174,7 @@ API 发送控制请求。
    `packaging/linux/io.github.terasum.Medict.metainfo.xml` 中对应的发布记录、
    `packaging/windows/medict.iss` 中的默认值和 `CHANGELOG.md`。发布前请对照
    上游 `terasum/medict` 的版本。
-2. 推送与 `VERSION` 匹配的标签，例如 `v4.0.1`。
+2. 推送与 `VERSION` 匹配的标签，例如 `v4.0.2`。
 3. 等待 Release 工作流构建三个安装包。
 4. 检查 GitHub Release。
 

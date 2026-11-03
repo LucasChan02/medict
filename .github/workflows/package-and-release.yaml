@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release tag; it must match VERSION, for example v4.0.1'
+        description: 'Release tag; it must match VERSION, for example v4.0.2'
         required: true
-        default: 'v4.0.1'
+        default: 'v4.0.2'
 
 permissions:
   contents: write
@@ -72,7 +72,7 @@ jobs:
           path: |
             build/downloads
             build/kf6-prefix
-          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-msvc2022-v2
+          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-msvc2022-v3
 
       - name: Download ECM and Kirigami sources
         shell: pwsh
@@ -115,16 +115,94 @@ jobs:
       - name: Stage application
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
           $stage = Join-Path $PWD 'stage'
+          $kf6 = Join-Path $PWD 'build/kf6-prefix'
+          $kf6Qml = Join-Path $kf6 'qml'
+          if (-not (Test-Path -LiteralPath (Join-Path $kf6Qml 'org/kde/kirigami/qmldir'))) {
+            throw "Kirigami QML module is missing from $kf6Qml."
+          }
+
           cmake --install build/qt --prefix $stage
-          cmake --install build/kirigami-build --prefix $stage
-          $env:QML_IMPORT_PATH = "$env:QT_ROOT_DIR\qml;$PWD\build\kf6-prefix\qml"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Installing the Qt client failed."
+          }
+
+          New-Item -ItemType Directory -Force "$stage\qml" | Out-Null
+          Copy-Item -Path (Join-Path $kf6Qml '*') -Destination "$stage\qml" `
+            -Recurse -Force
+          foreach ($runtimeDir in @($kf6, (Join-Path $kf6 'lib'))) {
+            if (Test-Path -LiteralPath $runtimeDir) {
+              Get-ChildItem -LiteralPath $runtimeDir -File -Filter '*.dll' |
+                ForEach-Object {
+                  Copy-Item -LiteralPath $_.FullName -Destination $stage -Force
+                }
+            }
+          }
+
+          $env:PATH = "$kf6\lib;$kf6;$env:PATH"
+          $env:QML_IMPORT_PATH = "$stage\qml;$env:QT_ROOT_DIR\qml"
+          $env:QML2_IMPORT_PATH = $env:QML_IMPORT_PATH
           & "$env:QT_ROOT_DIR\bin\windeployqt.exe" `
             --release `
             --compiler-runtime `
             --qmldir "$PWD\qt\qml" `
             --dir $stage `
             "$stage\Medict.exe"
+          if ($LASTEXITCODE -ne 0) {
+            throw "windeployqt failed."
+          }
+
+          Copy-Item -Path (Join-Path $kf6Qml '*') -Destination "$stage\qml" `
+            -Recurse -Force
+          foreach ($runtimeDir in @($kf6, (Join-Path $kf6 'lib'))) {
+            if (Test-Path -LiteralPath $runtimeDir) {
+              Get-ChildItem -LiteralPath $runtimeDir -File -Filter '*.dll' |
+                ForEach-Object {
+                  Copy-Item -LiteralPath $_.FullName -Destination $stage -Force
+                }
+            }
+          }
+
+          $kirigamiQmldir = Join-Path $stage 'qml/org/kde/kirigami/qmldir'
+          if (-not (Test-Path -LiteralPath $kirigamiQmldir)) {
+            throw "The staged application is missing $kirigamiQmldir."
+          }
+          if (-not (Get-ChildItem -LiteralPath (Join-Path $stage 'qml/org/kde/kirigami') `
+                  -Recurse -File -Filter '*plugin*.dll')) {
+            throw "The staged application is missing the Kirigami QML plugin."
+          }
+          if (-not (Get-ChildItem -LiteralPath $stage -File -Filter '*Kirigami*.dll')) {
+            throw "The staged application is missing the Kirigami runtime library."
+          }
+          foreach ($requiredFile in @(
+              'Qt6Core.dll',
+              'Qt6Qml.dll',
+              'Qt6WebEngineCore.dll',
+              'QtWebEngineProcess.exe',
+              'resources\qtwebengine_resources.pak',
+              'resources\icudtl.dat')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $stage $requiredFile))) {
+              throw "The staged application is missing $requiredFile."
+            }
+          }
+
+          Get-ChildItem -LiteralPath $stage -Recurse -File |
+            Where-Object { $_.Name -match 'Kirigami|QtWebEngineProcess' } |
+            Select-Object FullName, Length
+
+      - name: Smoke test staged application
+        shell: pwsh
+        timeout-minutes: 2
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:QT_QUICK_BACKEND = 'software'
+          $env:QTWEBENGINE_DISABLE_SANDBOX = '1'
+          & "$PWD\stage\Medict.exe" --smoke-test
+          if ($LASTEXITCODE -ne 0) {
+            throw "The staged application could not load its QML interface."
+          }
 
       - name: Build installer
         shell: pwsh
@@ -187,7 +265,8 @@ jobs:
             libxkbcommon-x11-0 \
             libxkbcommon-x11-dev \
             ninja-build \
-            patchelf
+            patchelf \
+            xvfb
 
       - name: Set up Go
         uses: actions/setup-go@v7
@@ -208,7 +287,7 @@ jobs:
           path: |
             build/downloads
             build/kf6-prefix
-          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-gcc-v1
+          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-gcc-v2
 
       - name: Build ECM and Kirigami
         run: sh packaging/ci/build-kirigami.sh
@@ -233,14 +312,64 @@ jobs:
           cmake --build build/qt --parallel
           DESTDIR="$PWD/AppDir" cmake --install build/qt
 
-      - name: Stage AppImage
+      - name: Deploy Qt and Kirigami
         run: |
+          set -eu
+          KIRIGAMI_PREFIX="$PWD/build/kf6-prefix"
+          KIRIGAMI_QML="$KIRIGAMI_PREFIX/lib/qt6/qml/org/kde"
+          test -f "$KIRIGAMI_QML/kirigami/qmldir"
+          test -d "$KIRIGAMI_QML"
+
+          install -d AppDir/usr/qml/org AppDir/usr/lib
+          cp -a "$KIRIGAMI_QML" AppDir/usr/qml/org/
+          kirigami_libs=$(find "$KIRIGAMI_PREFIX/lib" -maxdepth 1 \
+            \( -type f -o -type l \) \
+            \( -name 'libKirigami*.so*' -o -name 'libKF6Kirigami*.so*' \) \
+            -print | wc -l)
+          test "$kirigami_libs" -gt 0
+          find "$KIRIGAMI_PREFIX/lib" -maxdepth 1 \( -type f -o -type l \) \
+            \( -name 'libKirigami*.so*' -o -name 'libKF6Kirigami*.so*' \) \
+            -exec cp -a -t AppDir/usr/lib {} +
+
+          curl -fL -o linuxdeploy-x86_64.AppImage \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          curl -fL -o linuxdeploy-plugin-qt-x86_64.AppImage \
+            https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
+
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          export QMAKE="$QT_ROOT_DIR/bin/qmake"
+          export EXTRA_QT_MODULES="webenginecore"
+          export QML_SOURCES_PATHS="$PWD/qt/qml"
+          export QML_MODULES_PATHS="$KIRIGAMI_PREFIX/lib/qt6/qml"
+          export QML_IMPORT_PATH="$QML_MODULES_PATHS:$QT_ROOT_DIR/qml"
+          export LD_LIBRARY_PATH="$KIRIGAMI_PREFIX/lib:$QT_ROOT_DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt
+
+      - name: Stage and verify AppImage runtime
+        run: |
+          set -eu
           install -Dm755 packaging/linux/AppRun AppDir/AppRun
           install -Dm644 packaging/linux/io.github.terasum.Medict.desktop \
             AppDir/io.github.terasum.Medict.desktop
           install -Dm644 packaging/linux/io.github.terasum.Medict.png \
             AppDir/io.github.terasum.Medict.png
           ln -sfn io.github.terasum.Medict.png AppDir/.DirIcon
+
+          test -x AppDir/usr/bin/medict
+          test -f AppDir/usr/bin/qt.conf
+          test -f AppDir/usr/qml/org/kde/kirigami/qmldir
+          find AppDir/usr/qml/org/kde/kirigami -maxdepth 1 -type f \
+            -name '*plugin*.so' -print -quit | grep -q .
+          find AppDir/usr/lib -maxdepth 1 \( -type f -o -type l \) \
+            \( -name 'libKirigami*.so*' -o -name 'libKF6Kirigami*.so*' \) \
+            -print -quit | grep -q .
+          test -f AppDir/usr/lib/libQt6Core.so.6
+          test -f AppDir/usr/lib/libQt6Qml.so.6
+          test -f AppDir/usr/lib/libQt6WebEngineCore.so.6
+          find AppDir/usr -type f -name 'QtWebEngineProcess' -print -quit | grep -q .
+          find AppDir/usr -type f -name 'qtwebengine_resources*.pak' -print -quit | grep -q .
+
           du -sh AppDir
           du -ah AppDir | sort -rh | head -n 30
 
@@ -252,6 +381,15 @@ jobs:
           ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool-x86_64.AppImage \
             AppDir "dist/Medict-${PACKAGE_VERSION}-linux-x86_64.AppImage"
           ls -lh dist/*.AppImage
+
+      - name: Smoke test AppImage
+        timeout-minutes: 2
+        run: |
+          set -eu
+          APPIMAGE_EXTRACT_AND_RUN=1 xvfb-run -a env \
+            QTWEBENGINE_DISABLE_SANDBOX=1 \
+            QT_QUICK_BACKEND=software \
+            "dist/Medict-${PACKAGE_VERSION}-linux-x86_64.AppImage" --smoke-test
 
       - name: Upload AppImage
         uses: actions/upload-artifact@v7

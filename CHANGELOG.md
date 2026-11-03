@@ -4,6 +4,26 @@ All notable changes to [Medict](https://github.com/terasum/medict) are recorded
 here. The most recent release is at the top. For the full history before
 v3.1.0, see `git log v3.0.1..HEAD`.
 
+## v4.0.2
+
+Patch release for the Windows installer and Linux AppImage runtime. This
+release fixes blank application windows and restores a self-contained AppImage.
+
+### Fixed
+- The Windows installer now includes the Kirigami QML modules, QML plugins,
+  and runtime libraries required by the main window.
+- The Linux AppImage again bundles Qt 6, Qt WebEngine, QML modules, WebEngine
+  resources, and the WebEngine helper process. It no longer depends on a host
+  Qt or Kirigami installation.
+- Release jobs now reject an incomplete Kirigami build, verify the packaged
+  runtime files, and run a QML startup smoke test.
+
+### Changed
+- The AppImage documentation now describes the bundled runtime. A separate KDE
+  Plasma Qt installation is not required.
+- GitHub Actions caches use a new Kirigami key so incomplete cached installs
+  are not reused.
+
 ## v4.0.1
 
 Patch release for packaging, release automation, and version consistency. This

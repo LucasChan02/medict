@@ -4,6 +4,7 @@
 #include "api_client.h"
 #include "app_controller.h"
 
+#include <QDebug>
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QIcon>
@@ -76,6 +77,10 @@ int main(int argc, char *argv[])
     engine.loadFromModule(QStringLiteral("Medict"), QStringLiteral("Main"));
     if (engine.rootObjects().isEmpty()) {
         return 1;
+    }
+    if (app.arguments().contains(QStringLiteral("--smoke-test"))) {
+        qInfo("Medict QML smoke test passed.");
+        return 0;
     }
 
     controller.start();

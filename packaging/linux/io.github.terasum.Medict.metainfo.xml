@@ -24,6 +24,14 @@
   </developer>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="4.0.2" date="2026-11-03">
+      <description>
+        <p>
+          Packaging fix that bundles the Qt, Kirigami, and Qt WebEngine runtime
+          files required to show the application window.
+        </p>
+      </description>
+    </release>
     <release version="4.0.1" date="2026-11-03">
       <description>
         <p>

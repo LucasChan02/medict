@@ -19,9 +19,23 @@ phase() {
     printf '[%s] %s\n' "$(date -u +%H:%M:%S)" "$*"
 }
 
+test_kirigami_install() {
+    qml_dir="$PREFIX/lib/qt6/qml/org/kde/kirigami"
+    test -f "$qml_dir/qmldir" &&
+        find "$qml_dir" -maxdepth 1 -type f -name '*plugin*.so' -print -quit |
+            grep -q . &&
+        find "$PREFIX/lib" -maxdepth 1 \( -type f -o -type l \) \
+            \( -name 'libKirigami*.so*' -o -name 'libKF6Kirigami*.so*' \) \
+            -print -quit | grep -q .
+}
+
 if [ -f "$MARKER" ]; then
-    phase "Reusing installed Kirigami $KIRIGAMI_VERSION from $PREFIX."
-    exit 0
+    if test_kirigami_install; then
+        phase "Reusing installed Kirigami $KIRIGAMI_VERSION from $PREFIX."
+        exit 0
+    fi
+    phase "Cached Kirigami install is incomplete. Rebuilding it."
+    rm -f "$MARKER"
 fi
 
 fetch_archive() {
@@ -70,6 +84,7 @@ cmake -S "$BUILD_ROOT/kirigami-$KIRIGAMI_VERSION" \
     -DCMAKE_PREFIX_PATH="$QT_PREFIX;$PREFIX" \
     -DBUILD_TESTING=OFF \
     -DBUILD_EXAMPLES=OFF \
+    -DBUILD_SHARED_LIBS=ON \
     -DUSE_DBUS=OFF \
     -DKDE_INSTALL_BINDIR=bin \
     -DKDE_INSTALL_LIBDIR=lib \
@@ -78,5 +93,9 @@ phase "Building Kirigami"
 cmake --build "$BUILD_ROOT/kirigami-build" --parallel
 phase "Installing Kirigami"
 cmake --install "$BUILD_ROOT/kirigami-build"
+if ! test_kirigami_install; then
+    phase "Kirigami install is missing its QML module or runtime libraries in $PREFIX."
+    exit 1
+fi
 touch "$MARKER"
 phase "Kirigami $KIRIGAMI_VERSION is ready."

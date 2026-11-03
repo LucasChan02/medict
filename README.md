@@ -14,7 +14,7 @@ follows the KDE Human Interface Guidelines and uses the active Plasma style
 and Breeze icons when available. A local Go process reads the dictionary files
 and supplies the control API.
 
-The current stable release is **v4.0.1**.
+The current stable release is **v4.0.2**.
 
 ## Features
 
@@ -66,13 +66,13 @@ GitHub Actions builds every release package.
 
 | Platform | Package |
 | --- | --- |
-| Windows x86_64 | `Medict-4.0.1-windows-x86_64-setup.exe` |
-| Linux x86_64 | `Medict-4.0.1-linux-x86_64.AppImage` |
-| Linux x86_64 | `Medict-4.0.1-linux-x86_64.flatpak` |
+| Windows x86_64 | `Medict-4.0.2-windows-x86_64-setup.exe` |
+| Linux x86_64 | `Medict-4.0.2-linux-x86_64.AppImage` |
+| Linux x86_64 | `Medict-4.0.2-linux-x86_64.flatpak` |
 
 ### Windows
 
-Run `Medict-4.0.1-windows-x86_64-setup.exe`. The installer does not require administrator
+Run `Medict-4.0.2-windows-x86_64-setup.exe`. The installer does not require administrator
 rights. It installs Medict and the `medictd.exe` dictionary engine.
 
 ### Linux AppImage
@@ -80,20 +80,19 @@ rights. It installs Medict and the `medictd.exe` dictionary engine.
 Make the AppImage executable and run it:
 
 ```bash
-chmod +x Medict-4.0.1-linux-x86_64.AppImage
-./Medict-4.0.1-linux-x86_64.AppImage
+chmod +x Medict-4.0.2-linux-x86_64.AppImage
+./Medict-4.0.2-linux-x86_64.AppImage
 ```
 
-The AppImage includes Medict and the Go dictionary engine. It uses the Qt
-6.10, Qt WebEngine, and Kirigami libraries from the host system. Install a
-current KDE Plasma 6 desktop with those libraries before you start the
-AppImage.
+The AppImage includes Medict, the Go dictionary engine, Qt 6, Qt WebEngine, and
+Kirigami. It does not need a separate Qt or KDE development installation.
+Plasma desktop integration uses the host desktop when it is available.
 
 Some Linux systems block unprivileged user namespaces. On these systems, the
 definition area can stay empty. Start the AppImage with this command:
 
 ```bash
-QTWEBENGINE_DISABLE_SANDBOX=1 ./Medict-4.0.1-linux-x86_64.AppImage
+QTWEBENGINE_DISABLE_SANDBOX=1 ./Medict-4.0.2-linux-x86_64.AppImage
 ```
 
 This command disables the Qt WebEngine sandbox. Use it only when the default
@@ -104,7 +103,7 @@ start fails.
 Install the Flatpak package:
 
 ```bash
-flatpak install Medict-4.0.1-linux-x86_64.flatpak
+flatpak install Medict-4.0.2-linux-x86_64.flatpak
 flatpak run io.github.terasum.Medict
 ```
 
@@ -196,7 +195,7 @@ closes the dictionary and notebook stores.
    `packaging/linux/io.github.terasum.Medict.metainfo.xml`, the fallback in
    `packaging/windows/medict.iss`, and `CHANGELOG.md`. Compare the result with
    the upstream `terasum/medict` releases before you release.
-2. Push a tag that matches `VERSION`, such as `v4.0.1`.
+2. Push a tag that matches `VERSION`, such as `v4.0.2`.
 3. Wait for the Release workflow to build the three packages.
 4. Check the GitHub Release.
 

@@ -75,7 +75,7 @@ jobs:
           path: |
             build/downloads
             build/kf6-prefix
-          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-gcc-v1
+          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-gcc-v2
 
       - name: Build ECM and Kirigami
         run: sh packaging/ci/build-kirigami.sh
@@ -123,7 +123,7 @@ jobs:
           path: |
             build/downloads
             build/kf6-prefix
-          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-msvc2022-v2
+          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-msvc2022-v3
 
       - name: Download ECM and Kirigami sources
         shell: pwsh

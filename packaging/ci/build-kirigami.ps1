@@ -32,11 +32,37 @@ function Write-Phase {
     Write-Host ("[{0}] {1}" -f (Get-Date).ToUniversalTime().ToString("HH:mm:ss"), $Message)
 }
 
+function Test-KirigamiInstall {
+    param([string]$Root)
+
+    $QmlDir = Join-Path $Root "qml\org\kde\kirigami"
+    if (-not (Test-Path -LiteralPath (Join-Path $QmlDir "qmldir"))) {
+        return $false
+    }
+    if (-not (Get-ChildItem -LiteralPath $QmlDir -Recurse -File -Filter "*plugin*.dll" `
+            -ErrorAction SilentlyContinue)) {
+        return $false
+    }
+
+    $RuntimeDirs = @($Root, (Join-Path $Root "lib"))
+    foreach ($RuntimeDir in $RuntimeDirs) {
+        if (Get-ChildItem -LiteralPath $RuntimeDir -File -Filter "*Kirigami*.dll" `
+                -ErrorAction SilentlyContinue) {
+            return $true
+        }
+    }
+    return $false
+}
+
 New-Item -ItemType Directory -Force $Downloads, $Prefix | Out-Null
 
 if (Test-Path -LiteralPath $Marker) {
-    Write-Phase "Reusing installed Kirigami $KirigamiVersion from $Prefix."
-    return
+    if (Test-KirigamiInstall -Root $Prefix) {
+        Write-Phase "Reusing installed Kirigami $KirigamiVersion from $Prefix."
+        return
+    }
+    Write-Phase "Cached Kirigami install is incomplete. Rebuilding it."
+    Remove-Item -LiteralPath $Marker -Force
 }
 
 function Get-VerifiedArchive {
@@ -144,6 +170,7 @@ if ($Stage -in @("All", "Kirigami")) {
         -DCMAKE_PREFIX_PATH="$PrefixPath" `
         -DBUILD_TESTING=OFF `
         -DBUILD_EXAMPLES=OFF `
+        -DBUILD_SHARED_LIBS=ON `
         -DUSE_DBUS=OFF `
         -DKDE_INSTALL_BINDIR=. `
         -DKDE_INSTALL_LIBDIR=lib `
@@ -161,6 +188,9 @@ if ($Stage -in @("All", "Kirigami")) {
     cmake --install $KirigamiBuild
     if ($LASTEXITCODE -ne 0) {
         throw "Kirigami install failed."
+    }
+    if (-not (Test-KirigamiInstall -Root $Prefix)) {
+        throw "Kirigami install is missing its QML module or runtime libraries in $Prefix."
     }
 
     New-Item -ItemType File -Path $Marker -Force | Out-Null

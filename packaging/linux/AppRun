@@ -2,10 +2,46 @@
 set -eu
 
 HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+APP_ROOT="$HERE/usr"
 
-export QT_QPA_PLATFORMTHEME="${QT_QPA_PLATFORMTHEME:-kde}"
-export QML_IMPORT_PATH="$HERE/usr/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}"
+export LD_LIBRARY_PATH="$APP_ROOT/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export QT_PLUGIN_PATH="$APP_ROOT/plugins${QT_PLUGIN_PATH:+:$QT_PLUGIN_PATH}"
+export QML_IMPORT_PATH="$APP_ROOT/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}"
+
+if [ -z "${QT_QPA_PLATFORMTHEME:-}" ] &&
+    printf '%s %s' "${XDG_CURRENT_DESKTOP:-}" "${KDE_FULL_SESSION:-}" | grep -qi kde; then
+    export QT_QPA_PLATFORMTHEME=kde
+fi
+
+if [ "${QT_QPA_PLATFORMTHEME:-}" = "kde" ]; then
+    for plugin_dir in \
+        /usr/lib/qt6/plugins \
+        /usr/lib64/qt6/plugins \
+        /usr/lib/x86_64-linux-gnu/qt6/plugins; do
+        if find "$plugin_dir/platformthemes" -maxdepth 1 \
+            -name 'KDEPlasmaPlatformTheme*.so' -print -quit 2>/dev/null | grep -q .; then
+            QT_PLUGIN_PATH="$QT_PLUGIN_PATH:$plugin_dir"
+            break
+        fi
+    done
+
+    for qml_dir in \
+        /usr/lib/qt6/qml \
+        /usr/lib64/qt6/qml \
+        /usr/lib/x86_64-linux-gnu/qt6/qml; do
+        if [ -f "$qml_dir/org/kde/desktop/qmldir" ]; then
+            QML_IMPORT_PATH="$QML_IMPORT_PATH:$qml_dir"
+            break
+        fi
+    done
+
+    export QT_PLUGIN_PATH
+fi
+
 export QML2_IMPORT_PATH="$QML_IMPORT_PATH${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}"
+export QTWEBENGINEPROCESS_PATH="$APP_ROOT/libexec/QtWebEngineProcess"
+export QTWEBENGINE_RESOURCES_PATH="$APP_ROOT/resources"
+export QTWEBENGINE_LOCALES_PATH="$APP_ROOT/translations/qtwebengine_locales"
 
-exec "$HERE/usr/bin/medict" "$@"
+exec "$APP_ROOT/bin/medict" "$@"
 
