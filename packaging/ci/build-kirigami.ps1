@@ -23,8 +23,19 @@ $EcmArchive = "extra-cmake-modules-$EcmVersion.tar.xz"
 $KirigamiArchive = "kirigami-$KirigamiVersion.tar.xz"
 $EcmChecksum = "8f74af329e4c918358bfe54316f8cf4d530c28444595a3e2fb15075f72877f17"
 $KirigamiChecksum = "811a8a150e636216269c0346e62470997fa282113a39e32b2d332bd5969926f0"
+$Marker = Join-Path $Prefix ".medict-kirigami-$KirigamiVersion"
+
+function Write-Phase {
+    param([string]$Message)
+    Write-Host ("[{0}] {1}" -f (Get-Date).ToUniversalTime().ToString("HH:mm:ss"), $Message)
+}
 
 New-Item -ItemType Directory -Force $Downloads, $Prefix | Out-Null
+
+if (Test-Path -LiteralPath $Marker) {
+    Write-Phase "Reusing installed Kirigami $KirigamiVersion from $Prefix."
+    return
+}
 
 function Get-VerifiedArchive {
     param(
@@ -35,8 +46,17 @@ function Get-VerifiedArchive {
 
     $File = Join-Path $Downloads $Name
     if (-not (Test-Path $File)) {
-        Invoke-WebRequest -Uri $Url -OutFile $File -UseBasicParsing
+        $Partial = "$File.part"
+        Remove-Item -LiteralPath $Partial -Force -ErrorAction SilentlyContinue
+        Write-Phase "Downloading $Url"
+        & curl.exe -fL --retry 3 --retry-delay 5 --connect-timeout 20 `
+            --output $Partial $Url
+        if ($LASTEXITCODE -ne 0) {
+            throw "Download failed for $Name."
+        }
+        Move-Item -LiteralPath $Partial -Destination $File -Force
     }
+    Write-Phase "Verifying $Name"
     $Actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $File).Hash.ToLowerInvariant()
     if ($Actual -ne $Checksum) {
         throw "Checksum mismatch for $Name."
@@ -53,13 +73,21 @@ $KirigamiFile = Get-VerifiedArchive `
     -Checksum $KirigamiChecksum `
     -Url "https://download.kde.org/stable/frameworks/6.31/$KirigamiArchive"
 
+Write-Phase "Extracting ECM and Kirigami"
 tar -xJf $EcmFile -C $BuildRoot
+if ($LASTEXITCODE -ne 0) {
+    throw "ECM extraction failed."
+}
 tar -xJf $KirigamiFile -C $BuildRoot
+if ($LASTEXITCODE -ne 0) {
+    throw "Kirigami extraction failed."
+}
 
 $PrefixPath = "$env:QT_ROOT_DIR;$Prefix"
 $EcmSource = Join-Path $BuildRoot "extra-cmake-modules-$EcmVersion"
 $EcmBuild = Join-Path $BuildRoot "ecm-build"
 
+Write-Phase "Configuring ECM"
 cmake -S $EcmSource -B $EcmBuild -G Ninja `
     -DCMAKE_BUILD_TYPE=Release `
     -DCMAKE_INSTALL_PREFIX="$Prefix" `
@@ -67,10 +95,12 @@ cmake -S $EcmSource -B $EcmBuild -G Ninja `
 if ($LASTEXITCODE -ne 0) {
     throw "ECM configure failed."
 }
+Write-Phase "Building ECM"
 cmake --build $EcmBuild --parallel
 if ($LASTEXITCODE -ne 0) {
     throw "ECM build failed."
 }
+Write-Phase "Installing ECM"
 cmake --install $EcmBuild
 if ($LASTEXITCODE -ne 0) {
     throw "ECM install failed."
@@ -79,6 +109,7 @@ if ($LASTEXITCODE -ne 0) {
 $KirigamiSource = Join-Path $BuildRoot "kirigami-$KirigamiVersion"
 $KirigamiBuild = Join-Path $BuildRoot "kirigami-build"
 
+Write-Phase "Configuring Kirigami"
 cmake -S $KirigamiSource -B $KirigamiBuild -G Ninja `
     -DCMAKE_BUILD_TYPE=Release `
     -DCMAKE_INSTALL_PREFIX="$Prefix" `
@@ -93,11 +124,16 @@ cmake -S $KirigamiSource -B $KirigamiBuild -G Ninja `
 if ($LASTEXITCODE -ne 0) {
     throw "Kirigami configure failed."
 }
+Write-Phase "Building Kirigami"
 cmake --build $KirigamiBuild --parallel
 if ($LASTEXITCODE -ne 0) {
     throw "Kirigami build failed."
 }
+Write-Phase "Installing Kirigami"
 cmake --install $KirigamiBuild
 if ($LASTEXITCODE -ne 0) {
     throw "Kirigami install failed."
 }
+
+New-Item -ItemType File -Path $Marker -Force | Out-Null
+Write-Phase "Kirigami $KirigamiVersion is ready."

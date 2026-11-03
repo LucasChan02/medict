@@ -69,6 +69,14 @@ jobs:
           modules: 'qtwebengine qtwebchannel qtpositioning qtserialport qtshadertools'
           cache: true
 
+      - name: Cache ECM and Kirigami
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/downloads
+            build/kf6-prefix
+          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-gcc-v1
+
       - name: Build ECM and Kirigami
         run: sh packaging/ci/build-kirigami.sh
 
@@ -109,6 +117,14 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+
+      - name: Cache ECM and Kirigami
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/downloads
+            build/kf6-prefix
+          key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-msvc2022-v1
 
       - name: Build ECM and Kirigami
         shell: pwsh
