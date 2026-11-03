@@ -122,74 +122,74 @@ Kirigami.Page {
     }
 
     actions: [
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Back")
-            icon.name: "go-previous"
+            breezeIconName: "go-previous"
             shortcut: "Alt+Left"
             enabled: appState.canGoBack
             onTriggered: Controller.back()
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Forward")
-            icon.name: "go-next"
+            breezeIconName: "go-next"
             shortcut: "Alt+Right"
             enabled: appState.canGoForward
             onTriggered: Controller.forward()
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Reload")
-            icon.name: "view-refresh"
+            breezeIconName: "view-refresh"
             shortcut: "F5"
             enabled: appState.ready
             onTriggered: page.reloadDefinitions()
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Multi-dictionary")
-            icon.name: "view-list-details"
+            breezeIconName: "view-list-details"
             checkable: true
             checked: appState.multiMode
             onTriggered: Controller.setMultiMode(checked)
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Save word")
-            icon.name: "bookmark-new"
+            breezeIconName: "bookmark-new"
             shortcut: "Ctrl+D"
             enabled: appState.currentWord.length > 0
             onTriggered: Controller.addBookmark()
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Rebuild dictionary index")
-            icon.name: "view-refresh"
+            breezeIconName: "view-refresh"
             enabled: appState.currentDictId.length > 0
             onTriggered: Controller.rebuildIndex()
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Edit dictionary CSS")
-            icon.name: "document-edit"
+            breezeIconName: "document-edit"
             enabled: appState.currentDictId.length > 0
             onTriggered: applicationWindow().openCssEditor()
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Export entry")
-            icon.name: "document-export"
+            breezeIconName: "document-export"
             enabled: appState.currentWord.length > 0
             onTriggered: exportDialog.open()
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Zoom in")
-            icon.name: "zoom-in"
+            breezeIconName: "zoom-in"
             shortcut: "Ctrl+="
             onTriggered: Controller.setZoom(Math.min(160, appState.zoom + 10))
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Zoom out")
-            icon.name: "zoom-out"
+            breezeIconName: "zoom-out"
             shortcut: "Ctrl+-"
             onTriggered: Controller.setZoom(Math.max(80, appState.zoom - 10))
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Reset zoom")
-            icon.name: "zoom-original"
+            breezeIconName: "zoom-original"
             onTriggered: Controller.setZoom(100)
         }
     ]
@@ -311,9 +311,9 @@ Kirigami.Page {
             type: Kirigami.MessageType.Error
             text: appState.error
             actions: [
-                Kirigami.Action {
+                BreezeAction {
                     text: qsTr("Dismiss")
-                    icon.name: "dialog-close"
+                    breezeIconName: "dialog-close"
                     onTriggered: Controller.dismissError()
                 }
             ]
@@ -409,9 +409,9 @@ Kirigami.Page {
                     ? qsTr("Type a word and press Enter. Select several dictionaries to compare definitions.")
                     : qsTr("The dictionary engine is starting.")
 
-                helpfulAction: Kirigami.Action {
+                helpfulAction: BreezeAction {
                     text: qsTr("Search")
-                    icon.name: "edit-find"
+                    breezeIconName: "edit-find"
                     onTriggered: page.focusSearch()
                 }
             }

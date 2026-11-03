@@ -26,10 +26,13 @@ cleanup-commands:
 modules:
   - name: medict
     buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      env:
+        CARGO_HOME: /run/build/medict/.cargo
     build-commands:
       - mkdir -p /app/bin
       - if [ -x /usr/lib/qt6/bin/qmake ]; then ln -sf /usr/lib/qt6/bin/qmake /app/bin/qmake; elif [ -x /usr/bin/qmake6 ]; then ln -sf /usr/bin/qmake6 /app/bin/qmake; fi
-      - . /usr/lib/sdk/rust-stable/enable.sh
       - export PATH=/app/bin:$PATH
       - cargo build --release --locked --offline
         --config 'source.crates-io.replace-with="vendored-sources"'

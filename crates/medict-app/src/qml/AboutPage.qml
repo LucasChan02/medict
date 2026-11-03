@@ -41,9 +41,9 @@ Kirigami.AboutPage {
     donateUrl: ""
 
     actions: [
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Close")
-            icon.name: "window-close"
+            breezeIconName: "window-close"
             onTriggered: applicationWindow().pageStack.layers.pop()
         }
     ]

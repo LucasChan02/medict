@@ -27,15 +27,15 @@ Kirigami.ScrollablePage {
     Component.onCompleted: page.loadSettings()
 
     actions: [
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Save settings")
-            icon.name: "document-save"
+            breezeIconName: "document-save"
             enabled: appState.ready
             onTriggered: Controller.saveSettings(page.allowSymlinks, page.groupLimit)
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Close")
-            icon.name: "window-close"
+            breezeIconName: "window-close"
             shortcut: "Escape"
             onTriggered: applicationWindow().pageStack.layers.pop()
         }

@@ -332,6 +332,19 @@ jobs:
             --desktop-file packaging/linux/io.github.terasum.Medict.desktop \
             --icon-file packaging/linux/io.github.terasum.Medict.png
 
+          webengine_process="$(find "$QT_ROOT_DIR" -type f -name QtWebEngineProcess -print -quit)"
+          test -n "$webengine_process"
+          install -Dm755 "$webengine_process" AppDir/usr/libexec/QtWebEngineProcess
+          install -d AppDir/usr/resources
+          find "$QT_ROOT_DIR" -maxdepth 3 -type f \
+            \( -name 'qtwebengine_resources*.pak' -o -name 'icudtl.dat' \) \
+            -exec cp -a -t AppDir/usr/resources {} +
+          if [ -d "$QT_ROOT_DIR/translations/qtwebengine_locales" ]; then
+            install -d AppDir/usr/translations
+            cp -a "$QT_ROOT_DIR/translations/qtwebengine_locales" \
+              AppDir/usr/translations/
+          fi
+
       - name: Stage and verify AppImage runtime
         run: |
           set -eu

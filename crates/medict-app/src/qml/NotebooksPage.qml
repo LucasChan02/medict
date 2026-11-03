@@ -86,50 +86,50 @@ Kirigami.Page {
     }
 
     actions: [
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("New notebook")
-            icon.name: "list-add"
+            breezeIconName: "list-add"
             shortcut: "Ctrl+Shift+N"
             onTriggered: page.openCreateDialog()
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Rename notebook")
-            icon.name: "edit-rename"
+            breezeIconName: "edit-rename"
             enabled: page.hasNotebook
             onTriggered: page.openRenameDialog()
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Delete notebook")
-            icon.name: "edit-delete"
+            breezeIconName: "edit-delete"
             enabled: page.hasNotebook
             onTriggered: {
                 deleteNotebookDialog.notebookId = appState.selectedNotebookId;
                 deleteNotebookDialog.open();
             }
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Set as default")
-            icon.name: "dialog-ok"
+            breezeIconName: "dialog-ok"
             enabled: page.hasNotebook
                 && page.currentNotebook()
                 && !page.currentNotebook().isDefault
             onTriggered: Controller.setDefaultNotebook(appState.selectedNotebookId)
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Export Anki package")
-            icon.name: "document-export"
+            breezeIconName: "document-export"
             enabled: page.visibleBookmarks.length > 0
             onTriggered: exportAnkiDialog.open()
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Refresh")
-            icon.name: "view-refresh"
+            breezeIconName: "view-refresh"
             enabled: !appState.notebooksBusy
             onTriggered: Controller.loadNotebooks()
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Close")
-            icon.name: "window-close"
+            breezeIconName: "window-close"
             shortcut: "Escape"
             onTriggered: applicationWindow().pageStack.layers.pop()
         }
@@ -403,15 +403,15 @@ Kirigami.Page {
             : qsTr("Enter a name for the new notebook.")
         standardButtons: Kirigami.Dialog.NoButton
         customFooterActions: [
-            Kirigami.Action {
+            BreezeAction {
                 text: notebookNameDialog.renaming ? qsTr("Rename") : qsTr("Create")
-                icon.name: "document-save"
+                breezeIconName: "document-save"
                 enabled: notebookNameField.text.trim().length > 0
                 onTriggered: page.submitNotebookName()
             },
-            Kirigami.Action {
+            BreezeAction {
                 text: qsTr("Cancel")
-                icon.name: "dialog-cancel"
+                breezeIconName: "dialog-cancel"
                 onTriggered: notebookNameDialog.close()
             }
         ]

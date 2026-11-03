@@ -1,0 +1,21 @@
+[Icon Theme]
+Name=Breeze
+Comment=Embedded Breeze action icons for Medict
+Inherits=hicolor
+Example=folder
+
+Directories=scalable/actions,scalable/status
+
+[scalable/actions]
+Size=22
+MinSize=16
+MaxSize=64
+Type=Scalable
+Context=Actions
+
+[scalable/status]
+Size=22
+MinSize=16
+MaxSize=64
+Type=Scalable
+Context=Status

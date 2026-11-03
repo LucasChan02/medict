@@ -45,9 +45,9 @@ Kirigami.Page {
     }
 
     actions: [
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Save CSS")
-            icon.name: "document-save"
+            breezeIconName: "document-save"
             shortcut: "Ctrl+S"
             enabled: !appState.css.busy && appState.css.dictId.length > 0
             onTriggered: {
@@ -55,24 +55,24 @@ Kirigami.Page {
                 Controller.saveCss(cssEditor.text);
             }
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Restore dictionary CSS")
-            icon.name: "view-refresh"
+            breezeIconName: "view-refresh"
             enabled: !appState.css.busy
             onTriggered: {
                 Controller.restoreBaseCss();
                 Qt.callLater(page.loadEditorText);
             }
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Remove override")
-            icon.name: "edit-delete"
+            breezeIconName: "edit-delete"
             enabled: !appState.css.busy && appState.css.dictId.length > 0
             onTriggered: removeCssDialog.open()
         },
-        Kirigami.Action {
+        BreezeAction {
             text: qsTr("Close")
-            icon.name: "window-close"
+            breezeIconName: "window-close"
             shortcut: "Escape"
             onTriggered: page.closeEditor()
         }

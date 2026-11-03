@@ -116,36 +116,36 @@ Kirigami.ApplicationWindow {
         titleIcon: "qrc:/qt/qml/medict_app/icons/medict.png"
 
         actions: [
-            Kirigami.Action {
+            BreezeAction {
                 text: qsTr("Search")
-                icon.name: "edit-find"
+                breezeIconName: "edit-find"
                 shortcut: "Ctrl+F"
                 onTriggered: {
                     drawer.close();
                     root.focusLookup();
                 }
             },
-            Kirigami.Action {
+            BreezeAction {
                 text: qsTr("Vocabulary notebooks")
-                icon.name: "bookmarks"
+                breezeIconName: "bookmarks"
                 shortcut: "Ctrl+Shift+B"
                 onTriggered: {
                     drawer.close();
                     root.openNotebooks();
                 }
             },
-            Kirigami.Action {
+            BreezeAction {
                 text: qsTr("Settings")
-                icon.name: "configure"
+                breezeIconName: "configure"
                 shortcut: "Ctrl+,"
                 onTriggered: {
                     drawer.close();
                     root.openSettings();
                 }
             },
-            Kirigami.Action {
+            BreezeAction {
                 text: qsTr("About Medict")
-                icon.name: "help-about"
+                breezeIconName: "help-about"
                 onTriggered: {
                     drawer.close();
                     root.openAbout();
