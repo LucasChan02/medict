@@ -33,6 +33,10 @@ modules:
         -DMEDICT_VERSION=4.0.0
       - cmake --build qt-build --parallel
       - cmake --install qt-build
+      - find /app/translations/qtwebengine_locales -type f -name '*.pak'
+        ! -name 'en-US.pak' ! -name 'zh-CN.pak' ! -name 'zh-TW.pak' -delete
+      - rm -f /app/lib/libexec/webenginedriver
+        /app/resources/qtwebengine_devtools_resources.pak
     sources:
       - type: dir
         path: ../../qt
