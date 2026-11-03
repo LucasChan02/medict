@@ -25,10 +25,11 @@ packages for Windows and Linux.
   engine renderer. Entry links return to the Qt search flow.
 - **Windows installer**: Inno Setup builds
   `Medict-<version>-Setup.exe` with Qt WebEngine and the Go engine.
-- **Linux AppImage**: linuxdeploy and appimagetool package Qt, Qt WebEngine,
-  and the Go engine into one AppImage.
+- **Linux AppImage**: appimagetool packages Medict and the Go engine into a
+  compact AppImage. The AppImage uses the Qt, Qt WebEngine, and Kirigami
+  libraries from the host KDE Plasma installation.
 - **Linux Flatpak**: the release includes a Flatpak bundle that uses the KDE
-  runtime and Qt WebEngine BaseApp.
+  runtime and Qt WebEngine BaseApp. Kirigami comes from the KDE runtime.
 
 ### Changed
 - Release builds now target Windows x86_64 and Linux x86_64 only.

@@ -80,8 +80,9 @@ chmod +x Medict-4.0.0-x86_64.AppImage
 ./Medict-4.0.0-x86_64.AppImage
 ```
 
-AppImage 包含 Qt、Qt WebEngine 和 Go 词典引擎。Linux 的主要目标是
-KDE Plasma。其他支持 Qt 的桌面也可启动应用。
+AppImage 包含 Medict 和 Go 词典引擎。它使用主机系统中的 Qt 6.10、
+Qt WebEngine 和 Kirigami 库。启动前，请安装提供这些库的最新 KDE
+Plasma 6 桌面环境。
 
 部分 Linux 系统会禁用非特权用户命名空间。在这些系统上，释义区域可能为空。请
 用以下命令启动 AppImage：

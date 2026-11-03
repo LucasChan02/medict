@@ -17,7 +17,7 @@ find_package(Qt6 6.10 REQUIRED COMPONENTS
     Svg
     WebEngineQuick
 )
-find_package(KF6Kirigami 6.31 REQUIRED)
+find_package(KF6Kirigami 6.0 REQUIRED)
 
 qt_standard_project_setup(REQUIRES 6.10)
 

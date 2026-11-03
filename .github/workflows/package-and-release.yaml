@@ -211,29 +211,25 @@ jobs:
           cmake --build build/qt --parallel
           DESTDIR="$PWD/AppDir" cmake --install build/qt
 
-      - name: Deploy Qt libraries
+      - name: Stage AppImage
         run: |
-          curl -fL -o linuxdeploy-x86_64.AppImage \
-            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-          curl -fL -o linuxdeploy-plugin-qt-x86_64.AppImage \
-            https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
-          chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
-          export APPIMAGE_EXTRACT_AND_RUN=1
-          export QMAKE="$QT_ROOT_DIR/bin/qmake"
-          export EXTRA_QT_MODULES="webenginecore"
-          export QML_SOURCES_PATHS="$PWD/qt/qml"
-          export QML_MODULES_PATHS="$PWD/build/kf6-prefix/lib/qt6/qml"
-          export LD_LIBRARY_PATH="$PWD/build/kf6-prefix/lib:$QT_ROOT_DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-          ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt
+          install -Dm755 packaging/linux/AppRun AppDir/AppRun
+          install -Dm644 packaging/linux/io.github.terasum.Medict.desktop \
+            AppDir/io.github.terasum.Medict.desktop
+          install -Dm644 packaging/linux/io.github.terasum.Medict.png \
+            AppDir/io.github.terasum.Medict.png
+          ln -sfn io.github.terasum.Medict.png AppDir/.DirIcon
+          du -sh AppDir
+          du -ah AppDir | sort -rh | head -n 30
 
       - name: Build AppImage
         run: |
-          install -Dm755 packaging/linux/AppRun AppDir/AppRun
           curl -fL -o appimagetool-x86_64.AppImage \
             https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
           ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool-x86_64.AppImage \
             AppDir "dist/Medict-${PACKAGE_VERSION}-x86_64.AppImage"
+          ls -lh dist/*.AppImage
 
       - name: Upload AppImage
         uses: actions/upload-artifact@v5
@@ -280,11 +276,14 @@ jobs:
             --force-clean \
             builddir \
             packaging/flatpak/io.github.terasum.Medict.yaml
+          du -sh builddir/files repo
+          du -ah builddir/files | sort -rh | head -n 40
           flatpak build-bundle \
             --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo \
             repo \
             "dist/Medict-${PACKAGE_VERSION}-x86_64.flatpak" \
             io.github.terasum.Medict
+          ls -lh dist/*.flatpak
 
       - name: Upload Flatpak
         uses: actions/upload-artifact@v5

@@ -84,9 +84,10 @@ chmod +x Medict-4.0.0-x86_64.AppImage
 ./Medict-4.0.0-x86_64.AppImage
 ```
 
-The AppImage includes Qt, Qt WebEngine, and the Go dictionary engine.
-KDE Plasma is the primary Linux desktop target. Other Qt-capable desktops can
-start the application.
+The AppImage includes Medict and the Go dictionary engine. It uses the Qt
+6.10, Qt WebEngine, and Kirigami libraries from the host system. Install a
+current KDE Plasma 6 desktop with those libraries before you start the
+AppImage.
 
 Some Linux systems block unprivileged user namespaces. On these systems, the
 definition area can stay empty. Start the AppImage with this command:
