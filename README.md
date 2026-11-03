@@ -14,7 +14,7 @@ follows the KDE Human Interface Guidelines and uses the active Plasma style
 and Breeze icons when available. A local Go process reads the dictionary files
 and supplies the control API.
 
-The current stable release is **v4.0.0**.
+The current stable release is **v4.0.1**.
 
 ## Features
 
@@ -66,13 +66,13 @@ GitHub Actions builds every release package.
 
 | Platform | Package |
 | --- | --- |
-| Windows x86_64 | `Medict-4.0.0-Setup.exe` |
-| Linux x86_64 | `Medict-4.0.0-x86_64.AppImage` |
-| Linux x86_64 | `Medict-4.0.0-x86_64.flatpak` |
+| Windows x86_64 | `Medict-4.0.1-windows-x86_64-setup.exe` |
+| Linux x86_64 | `Medict-4.0.1-linux-x86_64.AppImage` |
+| Linux x86_64 | `Medict-4.0.1-linux-x86_64.flatpak` |
 
 ### Windows
 
-Run `Medict-4.0.0-Setup.exe`. The installer does not require administrator
+Run `Medict-4.0.1-windows-x86_64-setup.exe`. The installer does not require administrator
 rights. It installs Medict and the `medictd.exe` dictionary engine.
 
 ### Linux AppImage
@@ -80,8 +80,8 @@ rights. It installs Medict and the `medictd.exe` dictionary engine.
 Make the AppImage executable and run it:
 
 ```bash
-chmod +x Medict-4.0.0-x86_64.AppImage
-./Medict-4.0.0-x86_64.AppImage
+chmod +x Medict-4.0.1-linux-x86_64.AppImage
+./Medict-4.0.1-linux-x86_64.AppImage
 ```
 
 The AppImage includes Medict and the Go dictionary engine. It uses the Qt
@@ -93,7 +93,7 @@ Some Linux systems block unprivileged user namespaces. On these systems, the
 definition area can stay empty. Start the AppImage with this command:
 
 ```bash
-QTWEBENGINE_DISABLE_SANDBOX=1 ./Medict-4.0.0-x86_64.AppImage
+QTWEBENGINE_DISABLE_SANDBOX=1 ./Medict-4.0.1-linux-x86_64.AppImage
 ```
 
 This command disables the Qt WebEngine sandbox. Use it only when the default
@@ -104,7 +104,7 @@ start fails.
 Install the Flatpak package:
 
 ```bash
-flatpak install Medict-4.0.0-x86_64.flatpak
+flatpak install Medict-4.0.1-linux-x86_64.flatpak
 flatpak run io.github.terasum.Medict
 ```
 
@@ -190,17 +190,19 @@ closes the dictionary and notebook stores.
 
 ### Release Process
 
-1. Update the version in these files:
-   `qt/CMakeLists.txt`, `packaging/windows/medict.iss`,
-   `packaging/flatpak/io.github.terasum.Medict.yaml`,
-   `packaging/linux/io.github.terasum.Medict.metainfo.xml`, and `CHANGELOG.md`.
-   The workflow passes the tag version to the Windows and AppImage builds.
-2. Push a tag such as `v4.0.0`.
+1. Update `VERSION` with a three-segment version. Use a patch bump for build
+   and packaging fixes, a minor bump for compatible features, and a major bump
+   for incompatible changes. Update the matching release entry in
+   `packaging/linux/io.github.terasum.Medict.metainfo.xml`, the fallback in
+   `packaging/windows/medict.iss`, and `CHANGELOG.md`. Compare the result with
+   the upstream `terasum/medict` releases before you release.
+2. Push a tag that matches `VERSION`, such as `v4.0.1`.
 3. Wait for the Release workflow to build the three packages.
 4. Check the GitHub Release.
 
 A manual workflow run creates a draft release. A tag push publishes the
-release.
+release. Release files use
+`Medict-<version>-<os>-<arch>.<format>`.
 
 ## CI
 

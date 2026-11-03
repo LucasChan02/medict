@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: '1.25.x'
 
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Install build dependencies
         run: |
@@ -57,12 +57,12 @@ jobs:
             ninja-build
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: '1.25.x'
 
       - name: Set up Qt
-        uses: jurplel/install-qt-action@v4
+        uses: jurplel/install-qt-action@v4.5.0
         with:
           version: '6.10.0'
           arch: linux_gcc_64
@@ -70,7 +70,7 @@ jobs:
           cache: true
 
       - name: Cache ECM and Kirigami
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build/downloads
@@ -98,15 +98,15 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: '1.25.x'
 
       - name: Set up Qt
-        uses: jurplel/install-qt-action@v4
+        uses: jurplel/install-qt-action@v4.5.0
         with:
           version: '6.10.0'
           arch: win64_msvc2022_64
@@ -114,12 +114,11 @@ jobs:
           cache: true
 
       - name: Set up MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
+        shell: pwsh
+        run: ./packaging/ci/setup-msvc.ps1
 
       - name: Cache ECM and Kirigami
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build/downloads

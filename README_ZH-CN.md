@@ -12,7 +12,7 @@ Medict 是一款离线词典应用，支持 MDict 和 StarDict 词典。桌面�
 Qt 6、Kirigami 和 Qt WebEngine，并遵循 KDE 人机界面指南。在 KDE 上使用
 当前 Plasma 样式和 Breeze 图标。本地 Go 进程读取词典文件，并提供控制 API。
 
-当前稳定版本为 **v4.0.0**。
+当前稳定版本为 **v4.0.1**。
 
 ## 功能
 
@@ -62,13 +62,13 @@ Qt 6、Kirigami 和 Qt WebEngine，并遵循 KDE 人机界面指南。在 KDE �
 
 | 平台 | 安装包 |
 | --- | --- |
-| Windows x86_64 | `Medict-4.0.0-Setup.exe` |
-| Linux x86_64 | `Medict-4.0.0-x86_64.AppImage` |
-| Linux x86_64 | `Medict-4.0.0-x86_64.flatpak` |
+| Windows x86_64 | `Medict-4.0.1-windows-x86_64-setup.exe` |
+| Linux x86_64 | `Medict-4.0.1-linux-x86_64.AppImage` |
+| Linux x86_64 | `Medict-4.0.1-linux-x86_64.flatpak` |
 
 ### Windows
 
-运行 `Medict-4.0.0-Setup.exe`。安装程序不需要管理员权限。它会安装 Medict
+运行 `Medict-4.0.1-windows-x86_64-setup.exe`。安装程序不需要管理员权限。它会安装 Medict
 和 `medictd.exe` 词典引擎。
 
 ### Linux AppImage
@@ -76,8 +76,8 @@ Qt 6、Kirigami 和 Qt WebEngine，并遵循 KDE 人机界面指南。在 KDE �
 为 AppImage 添加执行权限，然后启动：
 
 ```bash
-chmod +x Medict-4.0.0-x86_64.AppImage
-./Medict-4.0.0-x86_64.AppImage
+chmod +x Medict-4.0.1-linux-x86_64.AppImage
+./Medict-4.0.1-linux-x86_64.AppImage
 ```
 
 AppImage 包含 Medict 和 Go 词典引擎。它使用主机系统中的 Qt 6.10、
@@ -88,7 +88,7 @@ Plasma 6 桌面环境。
 用以下命令启动 AppImage：
 
 ```bash
-QTWEBENGINE_DISABLE_SANDBOX=1 ./Medict-4.0.0-x86_64.AppImage
+QTWEBENGINE_DISABLE_SANDBOX=1 ./Medict-4.0.1-linux-x86_64.AppImage
 ```
 
 该命令会关闭 Qt WebEngine 沙箱。仅在默认启动失败时使用。
@@ -98,7 +98,7 @@ QTWEBENGINE_DISABLE_SANDBOX=1 ./Medict-4.0.0-x86_64.AppImage
 安装 Flatpak 包：
 
 ```bash
-flatpak install Medict-4.0.0-x86_64.flatpak
+flatpak install Medict-4.0.1-linux-x86_64.flatpak
 flatpak run io.github.terasum.Medict
 ```
 
@@ -169,16 +169,17 @@ API 发送控制请求。
 
 ### 发布流程
 
-1. 更新以下文件中的版本号：`qt/CMakeLists.txt`、
-   `packaging/windows/medict.iss`、
-   `packaging/flatpak/io.github.terasum.Medict.yaml`、
-   `packaging/linux/io.github.terasum.Medict.metainfo.xml` 和 `CHANGELOG.md`。
-   工作流会把标签版本传给 Windows 和 AppImage 构建。
-2. 推送标签，例如 `v4.0.0`。
+1. 在 `VERSION` 中写入三段式版本号。构建和打包修复使用修订版本号升级，
+   兼容功能使用次版本号升级，不兼容变更使用主版本号升级。同时更新
+   `packaging/linux/io.github.terasum.Medict.metainfo.xml` 中对应的发布记录、
+   `packaging/windows/medict.iss` 中的默认值和 `CHANGELOG.md`。发布前请对照
+   上游 `terasum/medict` 的版本。
+2. 推送与 `VERSION` 匹配的标签，例如 `v4.0.1`。
 3. 等待 Release 工作流构建三个安装包。
 4. 检查 GitHub Release。
 
-手动运行工作流会创建草稿 Release。推送标签会发布 Release。
+手动运行工作流会创建草稿 Release。推送标签会发布 Release。发布文件使用
+`Medict-<version>-<os>-<arch>.<format>` 命名。
 
 ## CI
 

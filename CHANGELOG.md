@@ -4,6 +4,22 @@ All notable changes to [Medict](https://github.com/terasum/medict) are recorded
 here. The most recent release is at the top. For the full history before
 v3.1.0, see `git log v3.0.1..HEAD`.
 
+## v4.0.1
+
+Patch release for packaging, release automation, and version consistency. This
+release does not change the application API or user-facing features.
+
+### Changed
+- Linux release packages are smaller. The AppImage now uses Qt, Qt WebEngine,
+  and Kirigami from the host KDE Plasma installation. The Flatpak uses the KDE
+  runtime's Kirigami and removes unused WebEngine debug assets and locales.
+- Release files use the
+  `Medict-<version>-<os>-<arch>.<format>` naming pattern.
+- `VERSION` is the shared source for the CMake client version and Flatpak
+  builds. Release tags must match `v<version>`.
+- GitHub Actions now use Node 24-supported action releases. The Windows jobs
+  configure MSVC with `vcvars64.bat` instead of a Node 20 action.
+
 ## v4.0.0
 
 Native Qt desktop client, loopback-only Go engine, and GitHub Actions release

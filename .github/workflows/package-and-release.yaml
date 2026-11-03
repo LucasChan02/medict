@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release tag for a draft build, for example v4.0.0-rc1'
+        description: 'Release tag; it must match VERSION, for example v4.0.1'
         required: true
-        default: 'v0.0.0-dryrun'
+        default: 'v4.0.1'
 
 permissions:
   contents: write
@@ -20,20 +20,42 @@ env:
   VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
 
 jobs:
+  validate:
+    name: Validate version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ env.VERSION }}
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          if ! printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "VERSION must contain a three-segment version, got '$version'." >&2
+            exit 1
+          fi
+          if [ "$RELEASE_TAG" != "v$version" ]; then
+            echo "Release tag '$RELEASE_TAG' must match VERSION 'v$version'." >&2
+            exit 1
+          fi
+
   windows:
     name: Windows EXE
     runs-on: windows-2022
+    needs: validate
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: '1.25.x'
 
       - name: Set up Qt
-        uses: jurplel/install-qt-action@v4
+        uses: jurplel/install-qt-action@v4.5.0
         with:
           version: '6.10.0'
           arch: win64_msvc2022_64
@@ -41,12 +63,11 @@ jobs:
           cache: true
 
       - name: Set up MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
+        shell: pwsh
+        run: ./packaging/ci/setup-msvc.ps1
 
       - name: Cache ECM and Kirigami
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build/downloads
@@ -71,7 +92,7 @@ jobs:
       - name: Build dictionary backend
         shell: pwsh
         run: |
-          $packageVersion = $env:VERSION -replace '^v', ''
+          $packageVersion = (Get-Content -LiteralPath VERSION -Raw).Trim()
           "PACKAGE_VERSION=$packageVersion" >> $env:GITHUB_ENV
           New-Item -ItemType Directory -Force build | Out-Null
           go build -trimpath `
@@ -119,18 +140,19 @@ jobs:
             "packaging\windows\medict.iss"
 
       - name: Upload installer
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
-          name: Medict-Windows
+          name: Medict-windows-x86_64
           path: dist/*.exe
           if-no-files-found: error
 
   linux-appimage:
     name: Linux AppImage
     runs-on: ubuntu-22.04
+    needs: validate
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Install build dependencies
         run: |
@@ -168,12 +190,12 @@ jobs:
             patchelf
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: '1.25.x'
 
       - name: Set up Qt
-        uses: jurplel/install-qt-action@v4
+        uses: jurplel/install-qt-action@v4.5.0
         with:
           version: '6.10.0'
           arch: linux_gcc_64
@@ -181,7 +203,7 @@ jobs:
           cache: true
 
       - name: Cache ECM and Kirigami
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build/downloads
@@ -193,7 +215,7 @@ jobs:
 
       - name: Build dictionary backend
         run: |
-          export PACKAGE_VERSION="${VERSION#v}"
+          export PACKAGE_VERSION="$(tr -d '[:space:]' < VERSION)"
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
           mkdir -p build dist AppDir
           go build -trimpath \
@@ -228,22 +250,23 @@ jobs:
             https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
           ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool-x86_64.AppImage \
-            AppDir "dist/Medict-${PACKAGE_VERSION}-x86_64.AppImage"
+            AppDir "dist/Medict-${PACKAGE_VERSION}-linux-x86_64.AppImage"
           ls -lh dist/*.AppImage
 
       - name: Upload AppImage
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
-          name: Medict-AppImage
+          name: Medict-linux-x86_64-appimage
           path: dist/*.AppImage
           if-no-files-found: error
 
   linux-flatpak:
     name: Linux Flatpak
     runs-on: ubuntu-22.04
+    needs: validate
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Install Flatpak tools
         run: |
@@ -251,13 +274,13 @@ jobs:
           sudo apt-get install -y flatpak flatpak-builder
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: '1.25.x'
 
       - name: Build dictionary backend
         run: |
-          export PACKAGE_VERSION="${VERSION#v}"
+          export PACKAGE_VERSION="$(tr -d '[:space:]' < VERSION)"
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
           mkdir -p dist
           go build -trimpath \
@@ -281,14 +304,14 @@ jobs:
           flatpak build-bundle \
             --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo \
             repo \
-            "dist/Medict-${PACKAGE_VERSION}-x86_64.flatpak" \
+            "dist/Medict-${PACKAGE_VERSION}-linux-x86_64.flatpak" \
             io.github.terasum.Medict
           ls -lh dist/*.flatpak
 
       - name: Upload Flatpak
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
-          name: Medict-Flatpak
+          name: Medict-linux-x86_64-flatpak
           path: dist/*.flatpak
           if-no-files-found: error
 
@@ -301,10 +324,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Download package artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           path: assets
           merge-multiple: true
@@ -322,7 +345,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Create or update GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3.0.3
         with:
           tag_name: ${{ env.VERSION }}
           name: Medict ${{ env.VERSION }}

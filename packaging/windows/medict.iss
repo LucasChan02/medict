@@ -1,5 +1,5 @@
 #ifndef MyAppVersion
-  #define MyAppVersion "4.0.0"
+  #define MyAppVersion "4.0.1"
 #endif
 
 #ifndef StageDir
@@ -21,7 +21,7 @@ DefaultDirName={autopf}\Medict
 DefaultGroupName=Medict
 DisableProgramGroupPage=yes
 OutputDir={#OutputDir}
-OutputBaseFilename=Medict-{#MyAppVersion}-Setup
+OutputBaseFilename=Medict-{#MyAppVersion}-windows-x86_64-setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern

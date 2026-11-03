@@ -30,7 +30,6 @@ modules:
         -DCMAKE_INSTALL_PREFIX=/app
         -DCMAKE_PREFIX_PATH=/app
         -DMEDICT_BACKEND_BINARY=/run/build/medict/medictd
-        -DMEDICT_VERSION=4.0.0
       - cmake --build qt-build --parallel
       - cmake --install qt-build
       - find /app/translations/qtwebengine_locales -type f -name '*.pak'
@@ -53,4 +52,7 @@ modules:
       - type: file
         path: ../../LICENSE
         dest-filename: LICENSE
+      - type: file
+        path: ../../VERSION
+        dest-filename: VERSION
 
