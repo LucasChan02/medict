@@ -1,6 +1,8 @@
 param(
     [string]$Prefix = "",
-    [string]$BuildRoot = ""
+    [string]$BuildRoot = "",
+    [ValidateSet("All", "Download", "ECM", "Kirigami")]
+    [string]$Stage = "All"
 )
 
 $ErrorActionPreference = "Stop"
@@ -49,7 +51,7 @@ function Get-VerifiedArchive {
         $Partial = "$File.part"
         Remove-Item -LiteralPath $Partial -Force -ErrorAction SilentlyContinue
         Write-Phase "Downloading $Url"
-        & curl.exe -fL --retry 3 --retry-delay 5 --connect-timeout 20 `
+        & curl.exe -fL --retry 3 --retry-delay 5 --connect-timeout 20 --max-time 300 `
             --output $Partial $Url
         if ($LASTEXITCODE -ne 0) {
             throw "Download failed for $Name."
@@ -64,76 +66,96 @@ function Get-VerifiedArchive {
     return $File
 }
 
-$EcmFile = Get-VerifiedArchive `
-    -Name $EcmArchive `
-    -Checksum $EcmChecksum `
-    -Url "https://download.kde.org/stable/frameworks/6.31/$EcmArchive"
-$KirigamiFile = Get-VerifiedArchive `
-    -Name $KirigamiArchive `
-    -Checksum $KirigamiChecksum `
-    -Url "https://download.kde.org/stable/frameworks/6.31/$KirigamiArchive"
-
-Write-Phase "Extracting ECM and Kirigami"
-tar -xJf $EcmFile -C $BuildRoot
-if ($LASTEXITCODE -ne 0) {
-    throw "ECM extraction failed."
-}
-tar -xJf $KirigamiFile -C $BuildRoot
-if ($LASTEXITCODE -ne 0) {
-    throw "Kirigami extraction failed."
-}
-
 $PrefixPath = "$env:QT_ROOT_DIR;$Prefix"
 $EcmSource = Join-Path $BuildRoot "extra-cmake-modules-$EcmVersion"
 $EcmBuild = Join-Path $BuildRoot "ecm-build"
-
-Write-Phase "Configuring ECM"
-cmake -S $EcmSource -B $EcmBuild -G Ninja `
-    -DCMAKE_BUILD_TYPE=Release `
-    -DCMAKE_INSTALL_PREFIX="$Prefix" `
-    -DBUILD_TESTING=OFF
-if ($LASTEXITCODE -ne 0) {
-    throw "ECM configure failed."
-}
-Write-Phase "Building ECM"
-cmake --build $EcmBuild --parallel
-if ($LASTEXITCODE -ne 0) {
-    throw "ECM build failed."
-}
-Write-Phase "Installing ECM"
-cmake --install $EcmBuild
-if ($LASTEXITCODE -ne 0) {
-    throw "ECM install failed."
-}
-
 $KirigamiSource = Join-Path $BuildRoot "kirigami-$KirigamiVersion"
 $KirigamiBuild = Join-Path $BuildRoot "kirigami-build"
 
-Write-Phase "Configuring Kirigami"
-cmake -S $KirigamiSource -B $KirigamiBuild -G Ninja `
-    -DCMAKE_BUILD_TYPE=Release `
-    -DCMAKE_INSTALL_PREFIX="$Prefix" `
-    -DCMAKE_PREFIX_PATH="$PrefixPath" `
-    -DBUILD_TESTING=OFF `
-    -DBUILD_EXAMPLES=OFF `
-    -DUSE_DBUS=OFF `
-    -DKDE_INSTALL_BINDIR=. `
-    -DKDE_INSTALL_LIBDIR=lib `
-    -DKDE_INSTALL_QMLDIR=qml `
-    -DKDE_INSTALL_INCLUDEDIR=include
-if ($LASTEXITCODE -ne 0) {
-    throw "Kirigami configure failed."
-}
-Write-Phase "Building Kirigami"
-cmake --build $KirigamiBuild --parallel
-if ($LASTEXITCODE -ne 0) {
-    throw "Kirigami build failed."
-}
-Write-Phase "Installing Kirigami"
-cmake --install $KirigamiBuild
-if ($LASTEXITCODE -ne 0) {
-    throw "Kirigami install failed."
+if ($Stage -in @("All", "Download")) {
+    $EcmFile = Get-VerifiedArchive `
+        -Name $EcmArchive `
+        -Checksum $EcmChecksum `
+        -Url "https://download.kde.org/stable/frameworks/6.31/$EcmArchive"
+    $KirigamiFile = Get-VerifiedArchive `
+        -Name $KirigamiArchive `
+        -Checksum $KirigamiChecksum `
+        -Url "https://download.kde.org/stable/frameworks/6.31/$KirigamiArchive"
+
+    if (-not (Test-Path -LiteralPath $EcmSource)) {
+        Write-Phase "Extracting ECM"
+        tar -xJf $EcmFile -C $BuildRoot
+        if ($LASTEXITCODE -ne 0) {
+            throw "ECM extraction failed."
+        }
+    }
+    if (-not (Test-Path -LiteralPath $KirigamiSource)) {
+        Write-Phase "Extracting Kirigami"
+        tar -xJf $KirigamiFile -C $BuildRoot
+        if ($LASTEXITCODE -ne 0) {
+            throw "Kirigami extraction failed."
+        }
+    }
 }
 
-New-Item -ItemType File -Path $Marker -Force | Out-Null
-Write-Phase "Kirigami $KirigamiVersion is ready."
+if ($Stage -eq "Download") {
+    Write-Phase "KDE source archives are ready."
+    return
+}
+
+if ($Stage -in @("All", "ECM")) {
+    Write-Phase "Configuring ECM"
+    cmake -S $EcmSource -B $EcmBuild -G Ninja `
+        -DCMAKE_BUILD_TYPE=Release `
+        -DCMAKE_INSTALL_PREFIX="$Prefix" `
+        -DBUILD_TESTING=OFF
+    if ($LASTEXITCODE -ne 0) {
+        throw "ECM configure failed."
+    }
+    Write-Phase "Building ECM"
+    cmake --build $EcmBuild --parallel
+    if ($LASTEXITCODE -ne 0) {
+        throw "ECM build failed."
+    }
+    Write-Phase "Installing ECM"
+    cmake --install $EcmBuild
+    if ($LASTEXITCODE -ne 0) {
+        throw "ECM install failed."
+    }
+}
+
+if ($Stage -eq "ECM") {
+    Write-Phase "ECM is ready."
+    return
+}
+
+if ($Stage -in @("All", "Kirigami")) {
+    Write-Phase "Configuring Kirigami"
+    cmake -S $KirigamiSource -B $KirigamiBuild -G Ninja `
+        -DCMAKE_BUILD_TYPE=Release `
+        -DCMAKE_INSTALL_PREFIX="$Prefix" `
+        -DCMAKE_PREFIX_PATH="$PrefixPath" `
+        -DBUILD_TESTING=OFF `
+        -DBUILD_EXAMPLES=OFF `
+        -DUSE_DBUS=OFF `
+        -DKDE_INSTALL_BINDIR=. `
+        -DKDE_INSTALL_LIBDIR=lib `
+        -DKDE_INSTALL_QMLDIR=qml `
+        -DKDE_INSTALL_INCLUDEDIR=include
+    if ($LASTEXITCODE -ne 0) {
+        throw "Kirigami configure failed."
+    }
+    Write-Phase "Building Kirigami"
+    cmake --build $KirigamiBuild --parallel
+    if ($LASTEXITCODE -ne 0) {
+        throw "Kirigami build failed."
+    }
+    Write-Phase "Installing Kirigami"
+    cmake --install $KirigamiBuild
+    if ($LASTEXITCODE -ne 0) {
+        throw "Kirigami install failed."
+    }
+
+    New-Item -ItemType File -Path $Marker -Force | Out-Null
+    Write-Phase "Kirigami $KirigamiVersion is ready."
+}

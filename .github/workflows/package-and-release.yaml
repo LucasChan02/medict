@@ -53,9 +53,20 @@ jobs:
             build/kf6-prefix
           key: kf6-${{ runner.os }}-6.31.0-qt6.10.0-msvc2022-v1
 
-      - name: Build ECM and Kirigami
+      - name: Download ECM and Kirigami sources
         shell: pwsh
-        run: ./packaging/ci/build-kirigami.ps1
+        timeout-minutes: 5
+        run: ./packaging/ci/build-kirigami.ps1 -Stage Download
+
+      - name: Build ECM
+        shell: pwsh
+        timeout-minutes: 5
+        run: ./packaging/ci/build-kirigami.ps1 -Stage ECM
+
+      - name: Build Kirigami
+        shell: pwsh
+        timeout-minutes: 20
+        run: ./packaging/ci/build-kirigami.ps1 -Stage Kirigami
 
       - name: Build dictionary backend
         shell: pwsh
