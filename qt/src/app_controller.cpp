@@ -8,7 +8,6 @@
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
-#include <QJsonDocument>
 #include <QLocale>
 #include <QMap>
 #include <QSaveFile>
@@ -45,14 +44,6 @@ QString encodedQuery(const QString &path, const QMap<QString, QString> &values)
         query.addQueryItem(it.key(), it.value());
     }
     return path + QLatin1Char('?') + query.query(QUrl::FullyEncoded);
-}
-
-QString jsonStringLiteral(const QString &value)
-{
-    QJsonArray array;
-    array.append(value);
-    QString encoded = QString::fromUtf8(QJsonDocument(array).toJson(QJsonDocument::Compact));
-    return encoded.mid(1, encoded.size() - 2);
 }
 
 QString preferenceString(const QJsonObject &preferences, const QString &key,
@@ -1277,7 +1268,7 @@ void AppController::setCurrentDefinitionIndex(int index)
 {
     const int clamped = m_definitions.isEmpty()
         ? -1
-        : std::clamp(index, 0, m_definitions.size() - 1);
+        : std::clamp(index, 0, static_cast<int>(m_definitions.size()) - 1);
     if (m_currentDefinitionIndex == clamped) {
         return;
     }
