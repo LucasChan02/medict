@@ -115,7 +115,30 @@ Kirigami.ApplicationWindow {
                 id: dictionaryFilter
                 Layout.fillWidth: true
                 placeholderText: qsTr("Filter dictionaries")
-                clearButtonEnabled: true
+                rightPadding: dictionaryFilter.text.length > 0
+                    ? clearDictionaryFilter.implicitWidth
+                        + Kirigami.Units.smallSpacing * 2
+                    : Kirigami.Units.smallSpacing * 2
+
+                Controls.ToolButton {
+                    id: clearDictionaryFilter
+
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: dictionaryFilter.text.length > 0
+                    display: Controls.AbstractButton.IconOnly
+                    icon.name: "edit-clear"
+                    text: qsTr("Clear filter")
+                    Accessible.name: text
+
+                    Controls.ToolTip.visible: hovered
+                    Controls.ToolTip.text: text
+
+                    onClicked: {
+                        dictionaryFilter.clear();
+                        dictionaryFilter.forceActiveFocus();
+                    }
+                }
             }
 
             Repeater {

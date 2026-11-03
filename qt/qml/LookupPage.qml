@@ -267,9 +267,34 @@ Kirigami.Page {
 
                     Layout.fillWidth: true
                     placeholderText: qsTr("Search a word")
-                    clearButtonEnabled: true
                     leftPadding: Kirigami.Units.iconSizes.smallMedium
                         + Kirigami.Units.smallSpacing * 2
+                    rightPadding: searchField.text.length > 0
+                        ? clearSearchButton.implicitWidth
+                            + Kirigami.Units.smallSpacing * 2
+                        : Kirigami.Units.smallSpacing * 2
+
+                    Controls.ToolButton {
+                        id: clearSearchButton
+
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: searchField.text.length > 0
+                        display: Controls.AbstractButton.IconOnly
+                        icon.name: "edit-clear"
+                        text: qsTr("Clear search")
+                        Accessible.name: text
+
+                        Controls.ToolTip.visible: hovered
+                        Controls.ToolTip.text: text
+
+                        onClicked: {
+                            searchField.clear();
+                            searchField.forceActiveFocus();
+                            appController.setSearchText("");
+                            suggestionTimer.restart();
+                        }
+                    }
 
                     Component.onCompleted: text = appController.searchText
 

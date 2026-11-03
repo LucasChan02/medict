@@ -276,7 +276,7 @@ Kirigami.Page {
                         Layout.leftMargin: Kirigami.Units.smallSpacing
                     }
 
-                    Controls.ListView {
+                    ListView {
                         id: notebookList
 
                         Layout.fillWidth: true
@@ -356,7 +356,7 @@ Kirigami.Page {
                 Layout.fillHeight: true
                 padding: 0
 
-                Controls.ListView {
+                ListView {
                     id: bookmarkList
 
                     anchors.fill: parent

@@ -199,9 +199,16 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $env:QT_QUICK_BACKEND = 'software'
           $env:QTWEBENGINE_DISABLE_SANDBOX = '1'
+          $logPath = Join-Path $PWD 'stage/smoke-test.log'
           & "$PWD\stage\Medict.exe" --smoke-test
-          if ($LASTEXITCODE -ne 0) {
-            throw "The staged application could not load its QML interface."
+          $exitCode = $LASTEXITCODE
+          if (Test-Path -LiteralPath $logPath) {
+            Write-Host "--- Medict smoke-test log ---"
+            Get-Content -LiteralPath $logPath
+            Write-Host "--- End smoke-test log ---"
+          }
+          if ($exitCode -ne 0) {
+            throw "The staged application could not load its QML interface (exit $exitCode)."
           }
 
       - name: Build installer

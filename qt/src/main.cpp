@@ -5,9 +5,11 @@
 #include "app_controller.h"
 
 #include <QDebug>
+#include <QFile>
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QMutex>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQmlEngine>
@@ -15,6 +17,49 @@
 #include <QtWebEngineQuick/QtWebEngineQuick>
 
 namespace {
+
+QString smokeTestLogPath;
+QMutex smokeTestLogMutex;
+QtMessageHandler previousMessageHandler = nullptr;
+
+const char *messageTypeName(QtMsgType type)
+{
+    switch (type) {
+    case QtDebugMsg:
+        return "debug";
+    case QtInfoMsg:
+        return "info";
+    case QtWarningMsg:
+        return "warning";
+    case QtCriticalMsg:
+        return "critical";
+    case QtFatalMsg:
+        return "fatal";
+    }
+    return "message";
+}
+
+void smokeTestMessageHandler(QtMsgType type,
+                             const QMessageLogContext &context,
+                             const QString &message)
+{
+    {
+        QMutexLocker locker(&smokeTestLogMutex);
+        QFile logFile(smokeTestLogPath);
+        if (logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+            logFile.write("[");
+            logFile.write(messageTypeName(type));
+            logFile.write("] ");
+            logFile.write(message.toUtf8());
+            logFile.write("\n");
+            logFile.flush();
+        }
+    }
+
+    if (previousMessageHandler) {
+        previousMessageHandler(type, context, message);
+    }
+}
 
 bool hasQuickStyle(const QString &styleName)
 {
@@ -66,6 +111,13 @@ int main(int argc, char *argv[])
     QGuiApplication::setDesktopFileName(QStringLiteral("io.github.terasum.Medict"));
     QGuiApplication::setWindowIcon(QIcon(QStringLiteral(":/appicon.png")));
 
+    const bool smokeTest = app.arguments().contains(QStringLiteral("--smoke-test"));
+    if (smokeTest) {
+        smokeTestLogPath = app.applicationDirPath() + QStringLiteral("/smoke-test.log");
+        QFile::remove(smokeTestLogPath);
+        previousMessageHandler = qInstallMessageHandler(smokeTestMessageHandler);
+    }
+
     configureTheme();
 
     ApiClient api;
@@ -78,7 +130,7 @@ int main(int argc, char *argv[])
     if (engine.rootObjects().isEmpty()) {
         return 1;
     }
-    if (app.arguments().contains(QStringLiteral("--smoke-test"))) {
+    if (smokeTest) {
         qInfo("Medict QML smoke test passed.");
         return 0;
     }
