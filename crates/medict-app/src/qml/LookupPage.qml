@@ -17,6 +17,7 @@ Kirigami.Page {
     readonly property var liveCss: applicationWindow().previewCss
     readonly property int selectedCount: (appState.selectedDictIds || []).length
     readonly property int dictionaryCount: (appState.dictionaries || []).length
+    property bool webEngineLoaded: false
 
     title: appState.currentWord.length > 0
         ? appState.currentWord
@@ -375,6 +376,11 @@ Kirigami.Page {
 
                         onNavigationRequested: function(request) {
                             page.handleNavigation(request);
+                        }
+                        onLoadingChanged: {
+                            if (loadStatus === WebEngineView.LoadSucceededStatus) {
+                                page.webEngineLoaded = true;
+                            }
                         }
                         onLoadProgressChanged: {
                             if (loadProgress === 100) {

@@ -125,7 +125,7 @@ impl EcdictBackend {
             .timeout(Duration::from_secs(900))
             .build()
             .get(FULL_SOURCE_URL)
-            .set("User-Agent", "Medict/5 ECDICT installer")
+            .set("User-Agent", "Medict/4 ECDICT installer")
             .call()?;
         let reader = response.into_reader();
         let temporary = self.path.with_extension("db.download");

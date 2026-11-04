@@ -7,8 +7,8 @@
 [![CI](https://github.com/LucasChan02/medict/actions/workflows/ci.yaml/badge.svg)](https://github.com/LucasChan02/medict/actions/workflows/ci.yaml)
 [![License](https://img.shields.io/github/license/LucasChan02/medict.svg?style=flat-square)](LICENSE)
 
-Medict is an offline dictionary for MDict and StarDict files. Version 5 is a
-complete Rust rewrite:
+Medict is an offline dictionary for MDict and StarDict files. The current
+application is a Rust rewrite:
 
 - `medict-core` parses dictionaries, renders entries, stores notebooks,
   downloads ECDICT, exports Anki packages, and serves dictionary resources.
@@ -17,7 +17,7 @@ complete Rust rewrite:
 - The QML interface uses Kirigami, Plasma controls, Breeze icons, and the
   active KDE color scheme.
 
-The current release is **v5.0.0**.
+The current release is **v4.0.3**.
 
 ## Features
 
@@ -43,20 +43,21 @@ artifacts.
 
 | Platform | Package |
 | --- | --- |
-| Windows x86_64 | `Medict-5.0.0-windows-x86_64-setup.exe` |
-| Linux x86_64 | `Medict-5.0.0-linux-x86_64.AppImage` |
-| Linux x86_64 | `Medict-5.0.0-linux-x86_64.flatpak` |
+| Windows x86_64 | `Medict-4.0.3-windows-x86_64.exe` |
+| Linux x86_64 | `Medict-4.0.3-linux-x86_64.AppImage` |
+| Linux x86_64 | `Medict-4.0.3-linux-x86_64.flatpak` |
 
 ### Windows
 
-Run the installer. It installs Medict, Qt, Kirigami, and Qt WebEngine. The
-installer requests no administrator rights by default.
+Run the portable EXE directly. It requires no installation and requests no
+administrator rights. The single file contains Medict, Qt, Kirigami, Qt
+WebEngine, and the MSVC runtime.
 
 ### Linux AppImage
 
 ```bash
-chmod +x Medict-5.0.0-linux-x86_64.AppImage
-./Medict-5.0.0-linux-x86_64.AppImage
+chmod +x Medict-4.0.3-linux-x86_64.AppImage
+./Medict-4.0.3-linux-x86_64.AppImage
 ```
 
 The AppImage bundles the runtime libraries required to show the interface. On
@@ -65,7 +66,7 @@ KDE Plasma it also uses the host Plasma theme and icon integration.
 ### Linux Flatpak
 
 ```bash
-flatpak install Medict-5.0.0-linux-x86_64.flatpak
+flatpak install Medict-4.0.3-linux-x86_64.flatpak
 flatpak run io.github.terasum.Medict
 ```
 
@@ -118,15 +119,16 @@ C++ application source.
 ## Release Process
 
 `VERSION` is the single source for the workspace version and release tag. It
-uses a three-segment `x.y.z` format.
+uses a three-segment `x.y.z` format. See [VERSIONING.md](VERSIONING.md) for the
+major/minor/patch policy.
 
 1. Choose the change level:
-   - major for architecture or incompatible behavior changes;
+   - major only after explicit maintainer approval;
    - minor for compatible features;
    - patch for compatible fixes.
 2. Update `VERSION`, `Cargo.toml`, `CHANGELOG.md`, the AppStream release entry,
-   and the Inno Setup fallback.
-3. Push a matching tag, for example `v5.0.0`.
+   and the package version in the workflow.
+3. Push a matching tag, for example `v4.0.3`.
 4. The release workflow builds Windows x86_64, Linux x86_64 AppImage, and Linux
    x86_64 Flatpak packages.
 5. Check the published GitHub Release.

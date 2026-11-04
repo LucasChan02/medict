@@ -15,7 +15,7 @@ Kirigami.Action {
 
     icon.name: breezeIconName
     icon.source: breezeIconName.length > 0
-        ? "qrc:/qt/qml/medict_app/icons/breeze/scalable/actions/"
+        ? "qrc:/qt/qml/icons/breeze/scalable/actions/"
             + (iconAliases[breezeIconName] || breezeIconName) + ".svg"
         : ""
 }

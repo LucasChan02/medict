@@ -53,6 +53,8 @@ Kirigami.ApplicationWindow {
 
     property string previewCss: ""
     property int smokeStep: 0
+    property int smokeTicks: 0
+    property bool smokeHasLookup: false
 
     title: state.currentWord.length > 0
         ? qsTr("%1 — Medict").arg(state.currentWord)
@@ -63,7 +65,10 @@ Kirigami.ApplicationWindow {
     minimumHeight: Kirigami.Units.gridUnit * 24
     visible: true
 
-    Component.onCompleted: Controller.start()
+    Component.onCompleted: {
+        Controller.markUiReady();
+        Controller.start();
+    }
 
     function closeLayers(): void {
         while (pageStack.layers.depth > 0) {
@@ -114,7 +119,7 @@ Kirigami.ApplicationWindow {
         collapsible: !root.narrow
         width: Math.min(root.width * 0.84, Kirigami.Units.gridUnit * 22)
         title: qsTr("Medict")
-        titleIcon: "qrc:/qt/qml/medict_app/icons/medict.png"
+        titleIcon: "qrc:/qt/qml/icons/medict.png"
 
         actions: [
             BreezeAction {
@@ -310,19 +315,73 @@ Kirigami.ApplicationWindow {
         id: smokeTimer
 
         running: Controller.smokeTest
-        interval: 350
+        interval: 250
         repeat: true
         onTriggered: {
-            root.smokeStep += 1;
-            if (root.smokeStep === 1) {
-                root.openSettings();
+            root.smokeTicks += 1;
+            if (root.smokeTicks > 240) {
+                console.error("Medict smoke test timed out at step", root.smokeStep);
+                smokeTimer.stop();
+                Qt.quit();
+                return;
+            }
+
+            if (root.smokeStep === 0) {
+                if (!root.state.ready || root.state.busy) {
+                    return;
+                }
+                if ((root.state.dictionaries || []).length === 0) {
+                    console.error("Medict smoke test found no dictionaries");
+                    smokeTimer.stop();
+                    Qt.quit();
+                    return;
+                }
+                Controller.lookup("part");
+                root.smokeStep = 1;
+            } else if (root.smokeStep === 1) {
+                if (root.state.busy || (root.state.definitions || []).length === 0) {
+                    return;
+                }
+                const lookupPage = pageStack.currentItem;
+                if (!lookupPage || !lookupPage.webEngineLoaded) {
+                    return;
+                }
+                root.smokeHasLookup = true;
+                Controller.addBookmark();
+                root.smokeStep = 2;
             } else if (root.smokeStep === 2) {
-                root.openNotebooks();
+                if (!root.smokeHasLookup
+                        || root.state.notebooksBusy
+                        || (root.state.bookmarks || []).length === 0) {
+                    return;
+                }
+                root.openSettings();
+                root.smokeStep = 3;
             } else if (root.smokeStep === 3) {
-                root.openCssEditor();
+                if (pageStack.layers.depth !== 1) {
+                    return;
+                }
+                root.openNotebooks();
+                root.smokeStep = 4;
             } else if (root.smokeStep === 4) {
+                if (pageStack.layers.depth !== 1) {
+                    return;
+                }
+                root.openCssEditor();
+                root.smokeStep = 5;
+            } else if (root.smokeStep === 5) {
+                if (pageStack.layers.depth !== 1) {
+                    return;
+                }
                 root.openAbout();
-            } else {
+                root.smokeStep = 6;
+            } else if (root.smokeStep === 6) {
+                if (pageStack.layers.depth !== 1) {
+                    return;
+                }
+                root.closeLayers();
+                root.smokeStep = 7;
+                Controller.completeSmokeTest();
                 smokeTimer.stop();
                 Qt.quit();
             }

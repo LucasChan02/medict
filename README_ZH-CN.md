@@ -6,8 +6,8 @@
 [![Release](https://github.com/LucasChan02/medict/actions/workflows/package-and-release.yaml/badge.svg)](https://github.com/LucasChan02/medict/actions/workflows/package-and-release.yaml)
 [![CI](https://github.com/LucasChan02/medict/actions/workflows/ci.yaml/badge.svg)](https://github.com/LucasChan02/medict/actions/workflows/ci.yaml)
 
-Medict 是一款离线词典应用，支持 MDict 和 StarDict。版本 5 是完全重写的
-Rust 应用：
+Medict 是一款离线词典应用，支持 MDict 和 StarDict。当前应用使用 Rust
+重写：
 
 - `medict-core` 负责词典解析、搜索、HTML 渲染、生词本、ECDICT 下载、
   Anki 导出和词典资源服务。
@@ -15,7 +15,7 @@ Rust 应用：
   也不启动独立的后端进程。
 - 界面使用 Kirigami、Plasma 控件、Breeze 图标和当前 KDE 配色方案。
 
-当前版本为 **v5.0.0**。
+当前版本为 **v4.0.3**。
 
 ## 功能
 
@@ -39,25 +39,26 @@ Rust 应用：
 
 | 平台 | 安装包 |
 | --- | --- |
-| Windows x86_64 | `Medict-5.0.0-windows-x86_64-setup.exe` |
-| Linux x86_64 | `Medict-5.0.0-linux-x86_64.AppImage` |
-| Linux x86_64 | `Medict-5.0.0-linux-x86_64.flatpak` |
+| Windows x86_64 | `Medict-4.0.3-windows-x86_64.exe` |
+| Linux x86_64 | `Medict-4.0.3-linux-x86_64.AppImage` |
+| Linux x86_64 | `Medict-4.0.3-linux-x86_64.flatpak` |
 
 ### Windows
 
-运行安装程序。安装包包含 Qt、Kirigami 和 Qt WebEngine。
+直接运行便携 EXE。无需安装，也不需要管理员权限。单文件包含 Medict、Qt、
+Kirigami、Qt WebEngine 和 MSVC 运行库。
 
 ### Linux AppImage
 
 ```bash
-chmod +x Medict-5.0.0-linux-x86_64.AppImage
-./Medict-5.0.0-linux-x86_64.AppImage
+chmod +x Medict-4.0.3-linux-x86_64.AppImage
+./Medict-4.0.3-linux-x86_64.AppImage
 ```
 
 ### Linux Flatpak
 
 ```bash
-flatpak install Medict-5.0.0-linux-x86_64.flatpak
+flatpak install Medict-4.0.3-linux-x86_64.flatpak
 flatpak run io.github.terasum.Medict
 ```
 
@@ -93,10 +94,11 @@ Rust，项目不包含 C++ 应用源码。
 ## 发布
 
 `VERSION` 使用三段式 `x.y.z`，同时作为 Cargo 工作区版本和发布标签。
+版本级别规则请参阅 [VERSIONING.md](VERSIONING.md)。
 
-1. 主版本用于架构或不兼容变更，次版本用于兼容功能，修订版本用于修复。
-2. 更新 `VERSION`、`Cargo.toml`、`CHANGELOG.md`、AppStream 和 Inno Setup。
-3. 推送匹配标签，例如 `v5.0.0`。
+1. 主版本必须取得维护者明确批准，次版本用于兼容功能，修订版本用于修复。
+2. 更新 `VERSION`、`Cargo.toml`、`CHANGELOG.md`、AppStream 和工作流版本。
+3. 推送匹配标签，例如 `v4.0.3`。
 4. 等待 GitHub Actions 构建 Windows EXE、AppImage 和 Flatpak。
 5. 检查 GitHub Release。
 

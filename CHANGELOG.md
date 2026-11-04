@@ -4,11 +4,12 @@ All notable changes to [Medict](https://github.com/terasum/medict) are recorded
 here. The most recent release is at the top. For the full history before
 v3.1.0, see `git log v3.0.1..HEAD`.
 
-## v5.0.0
+## v4.0.3
 
-Major release. Medict is now a Rust application with a Qt Quick/Kirigami
+Patch release. Medict is now a Rust application with a Qt Quick/Kirigami
 frontend. The Go backend, Wails shell, Vue frontend, Qt C++ controller, and
-their old build paths are removed.
+their old build paths are removed. This replaces the withdrawn `v5.0.0`
+release and continues the `4.0.x` version line.
 
 ### Added
 - A Rust workspace with a reusable dictionary core and a Qt Bridge desktop
@@ -26,13 +27,21 @@ their old build paths are removed.
 - The interface uses Kirigami pages, Plasma controls, Breeze icon names, and
   the active KDE color scheme.
 - Release packages are built directly from Cargo on GitHub Actions:
-  `Medict-5.0.0-windows-x86_64-setup.exe`,
-  `Medict-5.0.0-linux-x86_64.AppImage`, and
-  `Medict-5.0.0-linux-x86_64.flatpak`.
+  `Medict-4.0.3-windows-x86_64.exe`,
+  `Medict-4.0.3-linux-x86_64.AppImage`, and
+  `Medict-4.0.3-linux-x86_64.flatpak`.
+- The Windows package is one portable EXE. It starts without an installer and
+  bundles Qt, Kirigami, Qt WebEngine, and the MSVC runtime.
 - Qt WebEngine and Kirigami runtime components remain bundled for release
   reliability. The packages no longer include a separate Go executable.
 
 ### Fixed
+- The embedded QML resource tree now matches the URL loaded at startup. The
+  main window no longer fails with `Main.qml: No such file or directory`.
+- The Windows smoke test now requires the main window, a real dictionary
+  lookup, WebEngine page loading, dictionary persistence, and every secondary
+  page to initialize before it passes.
+- The portable EXE includes the MSVC runtime DLLs instead of an installer.
 - Windows no longer waits for a separate backend process before the window can
   respond.
 - The definition pane no longer depends on an old controller or a stale QML

@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 use std::thread;
 
 use medict_core::AppCore;
@@ -62,6 +63,25 @@ impl Controller {
     fn set_state_json(&mut self, value: String) {
         self.state_json = value;
         self.state_changed();
+    }
+
+    #[qslot]
+    fn mark_ui_ready(&mut self) {
+        crate::UI_READY.store(true, Ordering::SeqCst);
+    }
+
+    #[qslot]
+    fn complete_smoke_test(&mut self) {
+        crate::SMOKE_COMPLETE.store(true, Ordering::SeqCst);
+        if let Some(path) = std::env::var_os("MEDICT_SMOKE_MARKER") {
+            if let Err(error) = std::fs::write(&path, b"ok\n") {
+                eprintln!(
+                    "medict: cannot write the smoke-test marker {}: {error}",
+                    std::path::Path::new(&path).display()
+                );
+            }
+        }
+        crate::UI_READY.store(true, Ordering::SeqCst);
     }
 
     #[qslot]

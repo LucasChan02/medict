@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release tag. It must match VERSION, for example v5.0.0'
+        description: 'Release tag. It must match VERSION, for example v4.0.3'
         required: true
-        default: 'v5.0.0'
+        default: 'v4.0.3'
 
 permissions:
   contents: write
@@ -40,7 +40,7 @@ jobs:
           fi
 
   windows:
-    name: Windows EXE
+    name: Windows Portable EXE
     runs-on: windows-2022
     needs: validate
     steps:
@@ -128,7 +128,7 @@ jobs:
           $env:QML2_IMPORT_PATH = $env:QML_IMPORT_PATH
           & "$env:QT_ROOT_DIR\bin\windeployqt.exe" `
             --release `
-            --compiler-runtime `
+            --no-compiler-runtime `
             --qmldir "$PWD\crates\medict-app\src\qml" `
             --dir $stage `
             "$stage\Medict.exe"
@@ -168,23 +168,52 @@ jobs:
             throw 'The staged application is missing the Kirigami runtime library.'
           }
 
+          if (-not $env:VCToolsRedistDir) {
+            throw 'VCToolsRedistDir is not set.'
+          }
+          $crt = Get-ChildItem -LiteralPath $env:VCToolsRedistDir -Directory -Recurse |
+            Where-Object {
+              $_.Name -like 'Microsoft.VC*.CRT' -and $_.FullName -match '\\x64\\'
+            } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $crt) {
+            throw 'The x64 MSVC runtime directory was not found.'
+          }
+          Copy-Item -Path (Join-Path $crt.FullName '*.dll') -Destination $stage -Force
+          Remove-Item -LiteralPath (Join-Path $stage 'vc_redist.x64.exe') -Force -ErrorAction SilentlyContinue
+          foreach ($runtime in @('msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $stage $runtime))) {
+              throw "The portable application is missing $runtime."
+            }
+          }
+
       - name: Smoke test staged application
         shell: pwsh
-        timeout-minutes: 2
+        timeout-minutes: 4
         run: |
           $ErrorActionPreference = 'Stop'
+          $env:QML_IMPORT_PATH = ''
+          $env:QML2_IMPORT_PATH = ''
+          $env:PATH = ($env:PATH -split ';' | Where-Object {
+            $_ -and $_ -notlike "$env:QT_ROOT_DIR*" -and $_ -notlike "$PWD\build\kf6-prefix*"
+          }) -join ';'
           $env:QT_QUICK_BACKEND = 'software'
           $env:QTWEBENGINE_DISABLE_SANDBOX = '1'
+          $env:QTWEBENGINE_CHROMIUM_FLAGS = '--disable-gpu --disable-dev-shm-usage'
+          $env:MEDICT_SMOKE_TEST = '1'
+          $marker = Join-Path $PWD 'stage/smoke-ok'
+          Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
+          $env:MEDICT_SMOKE_MARKER = $marker
           $stdout = Join-Path $PWD 'stage/smoke-stdout.log'
           $stderr = Join-Path $PWD 'stage/smoke-stderr.log'
           $process = Start-Process `
             -FilePath "$PWD\stage\Medict.exe" `
-            -ArgumentList '--smoke-test' `
             -WindowStyle Hidden `
             -RedirectStandardOutput $stdout `
             -RedirectStandardError $stderr `
             -PassThru
-          $finished = $process.WaitForExit(30000)
+          $finished = $process.WaitForExit(90000)
           if (-not $finished) {
             Stop-Process -Id $process.Id -Force
             throw 'The staged application did not finish its QML smoke test.'
@@ -198,24 +227,98 @@ jobs:
           if ($process.ExitCode -ne 0) {
             throw "The staged application could not load its QML interface (exit $($process.ExitCode))."
           }
+          if (-not (Test-Path -LiteralPath $marker)) {
+            throw 'The staged application did not complete its feature smoke test.'
+          }
 
-      - name: Build installer
+      - name: Build portable EXE
         shell: pwsh
         run: |
-          choco install innosetup --no-progress -y
           $stage = (Resolve-Path stage).Path
           $dist = Join-Path $PWD 'dist'
           New-Item -ItemType Directory -Force $dist | Out-Null
-          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' `
-            "/DMyAppVersion=$env:PACKAGE_VERSION" `
-            "/DStageDir=$stage" `
-            "/DOutputDir=$dist" `
-            'packaging\windows\medict.iss'
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Inno Setup failed.'
+
+          $sevenZip = Get-Command 7z -ErrorAction SilentlyContinue
+          if (-not $sevenZip) {
+            choco install 7zip --no-progress -y
+            $sevenZip = Get-Command 7z -ErrorAction SilentlyContinue
+          }
+          if (-not $sevenZip) {
+            $candidate = Join-Path $env:ProgramFiles '7-Zip\7z.exe'
+            if (Test-Path -LiteralPath $candidate) {
+              $sevenZip = Get-Item -LiteralPath $candidate
+            }
+          }
+          if (-not $sevenZip) {
+            throw '7-Zip was not found.'
+          }
+          $sfx = Join-Path (Split-Path $sevenZip.Source) '7z.sfx'
+          if (-not (Test-Path -LiteralPath $sfx)) {
+            throw 'The 7-Zip SFX module was not found.'
           }
 
-      - name: Upload installer
+          Remove-Item -Path (Join-Path $stage 'smoke-*') -Force -ErrorAction SilentlyContinue
+          $portableStage = Join-Path $PWD 'portable-stage'
+          Remove-Item -LiteralPath $portableStage -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force $portableStage | Out-Null
+          Copy-Item -Path (Join-Path $stage '*') -Destination $portableStage -Recurse
+          $config = @"
+;!@Install@!UTF-8!
+Title="Medict"
+RunProgram="Medict.exe"
+InstallPath="%TEMP%\\Medict-$env:PACKAGE_VERSION"
+OverwriteMode="2"
+GUIMode="2"
+;!@InstallEnd@!
+"@
+          [System.IO.File]::WriteAllText(
+            (Join-Path $portableStage 'config.txt'),
+            $config,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+          $portable = Join-Path $dist "Medict-$env:PACKAGE_VERSION-windows-x86_64.exe"
+          Push-Location $portableStage
+          try {
+            & $sevenZip.Source a -t7z -mx=9 "-sfx$sfx" $portable '*'
+          } finally {
+            Pop-Location
+          }
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Portable EXE packaging failed.'
+          }
+
+      - name: Smoke test portable EXE
+        shell: pwsh
+        timeout-minutes: 4
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:QML_IMPORT_PATH = ''
+          $env:QML2_IMPORT_PATH = ''
+          $env:PATH = ($env:PATH -split ';' | Where-Object {
+            $_ -and $_ -notlike "$env:QT_ROOT_DIR*" -and $_ -notlike "$PWD\build\kf6-prefix*"
+          }) -join ';'
+          $env:QT_QUICK_BACKEND = 'software'
+          $env:QTWEBENGINE_DISABLE_SANDBOX = '1'
+          $env:QTWEBENGINE_CHROMIUM_FLAGS = '--disable-gpu --disable-dev-shm-usage'
+          $env:MEDICT_SMOKE_TEST = '1'
+          $marker = Join-Path $PWD 'dist/portable-smoke-ok'
+          Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
+          $env:MEDICT_SMOKE_MARKER = $marker
+          $portable = Join-Path $PWD "dist/Medict-$env:PACKAGE_VERSION-windows-x86_64.exe"
+          $process = Start-Process -FilePath $portable -WindowStyle Hidden -PassThru
+          $finished = $process.WaitForExit(120000)
+          if (-not $finished) {
+            Stop-Process -Id $process.Id -Force
+            throw 'The portable EXE did not finish its QML smoke test.'
+          }
+          if ($process.ExitCode -ne 0) {
+            throw "The portable EXE exited with code $($process.ExitCode)."
+          }
+          if (-not (Test-Path -LiteralPath $marker)) {
+            throw 'The portable EXE did not complete its feature smoke test.'
+          }
+
+      - name: Upload portable EXE
         uses: actions/upload-artifact@v7
         with:
           name: Medict-windows-x86_64

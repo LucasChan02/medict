@@ -1,14 +1,18 @@
 mod controller;
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
 
 use medict_core::AppCore;
 use qtbridge::{QApp, include_bytes_qml};
 
 pub(crate) static CORE: OnceLock<Arc<AppCore>> = OnceLock::new();
+pub(crate) static UI_READY: AtomicBool = AtomicBool::new(false);
+pub(crate) static SMOKE_COMPLETE: AtomicBool = AtomicBool::new(false);
 
 fn main() {
-    let smoke_test = std::env::args().any(|argument| argument == "--smoke-test");
+    let smoke_test = std::env::args().any(|argument| argument == "--smoke-test")
+        || std::env::var_os("MEDICT_SMOKE_TEST").is_some();
     let core = Arc::new(AppCore::new(env!("CARGO_PKG_VERSION"), smoke_test));
     if let Err(error) = medict_core::server::start(Arc::clone(&core)) {
         eprintln!("medict: {error}");
@@ -16,11 +20,23 @@ fn main() {
     }
     let _ = CORE.set(core);
 
-    include_bytes_qml!("qml", "qt/qml/medict_app");
+    include_bytes_qml!("qml", "qt/qml");
 
-    QApp::new()
+    let exit_code = QApp::new()
         .register::<controller::Controller>()
         .add_import_path("qrc:/qt/qml")
-        .load_qml_from_file("qrc:/qt/qml/medict_app/Main.qml")
+        .load_qml_from_file("qrc:/qt/qml/Main.qml")
         .run();
+
+    if !UI_READY.load(Ordering::SeqCst) {
+        eprintln!("medict: the QML interface did not load");
+        std::process::exit(2);
+    }
+    if smoke_test && !SMOKE_COMPLETE.load(Ordering::SeqCst) {
+        eprintln!("medict: the QML feature smoke test did not complete");
+        std::process::exit(3);
+    }
+    if exit_code != 0 {
+        std::process::exit(exit_code);
+    }
 }
