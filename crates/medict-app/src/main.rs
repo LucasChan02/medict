@@ -20,7 +20,7 @@ fn main() {
     }
     let _ = CORE.set(core);
 
-    include_bytes_qml!("qml", "qt/qml");
+    include_bytes_qml!("qml", "qt");
 
     let exit_code = QApp::new()
         .register::<controller::Controller>()
