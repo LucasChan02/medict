@@ -18,6 +18,7 @@ Kirigami.Page {
     readonly property int selectedCount: (appState.selectedDictIds || []).length
     readonly property int dictionaryCount: (appState.dictionaries || []).length
     property bool webEngineLoaded: false
+    property var persistentProfile: null
 
     title: appState.currentWord.length > 0
         ? appState.currentWord
@@ -377,9 +378,12 @@ Kirigami.Page {
                         onNavigationRequested: function(request) {
                             page.handleNavigation(request);
                         }
-                        onLoadingChanged: {
-                            if (loadStatus === WebEngineView.LoadSucceededStatus) {
+                        onLoadingChanged: function(loadRequest) {
+                            if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
                                 page.webEngineLoaded = true;
+                            } else if (loadRequest.status === WebEngineView.LoadFailedStatus) {
+                                console.error("Medict could not load a definition:",
+                                    loadRequest.errorString);
                             }
                         }
                         onLoadProgressChanged: {
@@ -471,11 +475,14 @@ Kirigami.Page {
         onAccepted: Controller.exportEntry(Controller.localFile(selectedFile.toString()))
     }
 
-    WebEngineProfile {
-        id: persistentProfile
+    WebEngineProfilePrototype {
+        id: persistentProfilePrototype
 
         storageName: "Medict"
-        offTheRecord: false
+    }
+
+    Component.onCompleted: {
+        persistentProfile = persistentProfilePrototype.instance();
     }
 
     Connections {

@@ -155,6 +155,7 @@ jobs:
               'QtWebEngineProcess.exe',
               'qml\org\kde\kirigami\qmldir',
               'resources\qtwebengine_resources.pak',
+              'resources\v8_context_snapshot.bin',
               'resources\icudtl.dat')) {
             if (-not (Test-Path -LiteralPath (Join-Path $stage $required))) {
               throw "The staged application is missing $required."
@@ -441,7 +442,9 @@ jobs:
           install -Dm755 "$webengine_process" AppDir/usr/libexec/QtWebEngineProcess
           install -d AppDir/usr/resources
           find "$QT_ROOT_DIR" -maxdepth 3 -type f \
-            \( -name 'qtwebengine_resources*.pak' -o -name 'icudtl.dat' \) \
+            \( -name 'qtwebengine_resources*.pak' \
+               -o -name 'icudtl.dat' \
+               -o -name 'v8_context_snapshot.bin' \) \
             -exec cp -a -t AppDir/usr/resources {} +
           if [ -d "$QT_ROOT_DIR/translations/qtwebengine_locales" ]; then
             install -d AppDir/usr/translations
@@ -471,6 +474,8 @@ jobs:
           test -f AppDir/usr/lib/libQt6WebEngineCore.so.6
           find AppDir/usr -type f -name 'QtWebEngineProcess' -print -quit | grep -q .
           find AppDir/usr -type f -name 'qtwebengine_resources*.pak' -print -quit | grep -q .
+          test -f AppDir/usr/resources/v8_context_snapshot.bin
+          test -f AppDir/usr/resources/icudtl.dat
 
           du -sh AppDir
           du -ah AppDir | sort -rh | head -n 30

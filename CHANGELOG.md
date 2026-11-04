@@ -38,6 +38,11 @@ release and continues the `4.0.x` version line.
 ### Fixed
 - The embedded QML resource tree now matches the URL loaded at startup. The
   main window no longer fails with `Main.qml: No such file or directory`.
+- The definition pane now uses the Qt 6.10 WebEngine profile prototype and
+  handles load results through the signal argument. Definition pages load
+  without the undefined `loadStatus` error.
+- The AppImage now includes the WebEngine V8 startup snapshot and ICU data, so
+  its bundled browser engine starts without a missing snapshot error.
 - The Windows smoke test now requires the main window, a real dictionary
   lookup, WebEngine page loading, dictionary persistence, and every secondary
   page to initialize before it passes.
