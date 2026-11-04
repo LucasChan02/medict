@@ -2,6 +2,7 @@ mod controller;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
+use std::time::Duration;
 
 use medict_core::AppCore;
 use qtbridge::{QApp, include_bytes_qml};
@@ -14,6 +15,17 @@ fn main() {
     let smoke_test = std::env::args().any(|argument| argument == "--smoke-test")
         || std::env::var_os("MEDICT_SMOKE_TEST").is_some();
     let core = Arc::new(AppCore::new(env!("CARGO_PKG_VERSION"), smoke_test));
+    if smoke_test {
+        std::thread::spawn(|| {
+            std::thread::sleep(Duration::from_secs(75));
+            eprintln!(
+                "medict: smoke watchdog expired (ui_ready={}, complete={})",
+                UI_READY.load(Ordering::SeqCst),
+                SMOKE_COMPLETE.load(Ordering::SeqCst)
+            );
+            std::process::exit(3);
+        });
+    }
     if let Err(error) = medict_core::server::start(Arc::clone(&core)) {
         eprintln!("medict: {error}");
         let _ = core.mark_error(error.to_string());

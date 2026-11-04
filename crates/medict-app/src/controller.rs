@@ -73,6 +73,7 @@ impl Controller {
     #[qslot]
     fn complete_smoke_test(&mut self) {
         crate::SMOKE_COMPLETE.store(true, Ordering::SeqCst);
+        eprintln!("medict: the frontend smoke test completed");
         if let Some(path) = std::env::var_os("MEDICT_SMOKE_MARKER") {
             if let Err(error) = std::fs::write(&path, b"ok\n") {
                 eprintln!(

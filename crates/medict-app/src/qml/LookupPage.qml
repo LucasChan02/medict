@@ -226,6 +226,9 @@ Kirigami.Page {
 
     Component.onCompleted: {
         persistentProfile = persistentProfilePrototype.instance();
+        if (Controller.smokeTest) {
+            console.info("Medict smoke: WebEngine profile ready");
+        }
         searchField.text = appState.currentWord;
         Qt.callLater(page.focusSearch);
     }
@@ -380,6 +383,10 @@ Kirigami.Page {
                             page.handleNavigation(request);
                         }
                         onLoadingChanged: function(loadRequest) {
+                            if (Controller.smokeTest) {
+                                console.info("Medict smoke: WebEngine load status",
+                                    loadRequest.status, loadRequest.url);
+                            }
                             if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
                                 page.webEngineLoaded = true;
                             } else if (loadRequest.status === WebEngineView.LoadFailedStatus) {
@@ -389,6 +396,9 @@ Kirigami.Page {
                         }
                         onLoadProgressChanged: {
                             if (loadProgress === 100) {
+                                if (Controller.smokeTest) {
+                                    console.info("Medict smoke: WebEngine load complete");
+                                }
                                 page.applyPreviewCss(definitionView);
                             }
                         }

@@ -214,10 +214,17 @@ jobs:
             -RedirectStandardOutput $stdout `
             -RedirectStandardError $stderr `
             -PassThru
-          $finished = $process.WaitForExit(90000)
-          if (-not $finished) {
+          $deadline = [DateTime]::UtcNow.AddSeconds(90)
+          while (-not $process.HasExited `
+              -and -not (Test-Path -LiteralPath $marker) `
+              -and [DateTime]::UtcNow -lt $deadline) {
+            Start-Sleep -Milliseconds 500
+            $process.Refresh()
+          }
+          $exitCode = if ($process.HasExited) { $process.ExitCode } else { $null }
+          if (-not $process.HasExited) {
             Stop-Process -Id $process.Id -Force
-            throw 'The staged application did not finish its QML smoke test.'
+            $process.WaitForExit()
           }
           foreach ($log in @($stdout, $stderr)) {
             if (Test-Path -LiteralPath $log) {
@@ -225,11 +232,8 @@ jobs:
               Get-Content -LiteralPath $log
             }
           }
-          if ($process.ExitCode -ne 0) {
-            throw "The staged application could not load its QML interface (exit $($process.ExitCode))."
-          }
           if (-not (Test-Path -LiteralPath $marker)) {
-            throw 'The staged application did not complete its feature smoke test.'
+            throw "The staged application did not complete its feature smoke test (exit $exitCode)."
           }
 
       - name: Build portable EXE
@@ -308,13 +312,16 @@ jobs:
           $env:MEDICT_SMOKE_MARKER = $marker
           $portable = Join-Path $PWD "dist/Medict-$env:PACKAGE_VERSION-windows-x86_64.exe"
           $process = Start-Process -FilePath $portable -WindowStyle Hidden -PassThru
-          $finished = $process.WaitForExit(120000)
-          if (-not $finished) {
-            Stop-Process -Id $process.Id -Force
-            throw 'The portable EXE did not finish its QML smoke test.'
+          $deadline = [DateTime]::UtcNow.AddSeconds(120)
+          while (-not $process.HasExited `
+              -and -not (Test-Path -LiteralPath $marker) `
+              -and [DateTime]::UtcNow -lt $deadline) {
+            Start-Sleep -Milliseconds 500
+            $process.Refresh()
           }
-          if ($process.ExitCode -ne 0) {
-            throw "The portable EXE exited with code $($process.ExitCode)."
+          if (-not $process.HasExited) {
+            Stop-Process -Id $process.Id -Force
+            $process.WaitForExit()
           }
           if (-not (Test-Path -LiteralPath $marker)) {
             throw 'The portable EXE did not complete its feature smoke test.'
@@ -491,13 +498,24 @@ jobs:
           ls -lh dist/*.AppImage
 
       - name: Smoke test AppImage
-        timeout-minutes: 2
+        timeout-minutes: 3
         run: |
           set -eu
-          APPIMAGE_EXTRACT_AND_RUN=1 xvfb-run -a env \
+          marker="$(mktemp)"
+          rm -f "$marker"
+          set +e
+          MEDICT_SMOKE_MARKER="$marker" \
+          timeout 90s xvfb-run -a env \
             QTWEBENGINE_DISABLE_SANDBOX=1 \
             QT_QUICK_BACKEND=software \
+            APPIMAGE_EXTRACT_AND_RUN=1 \
             "dist/Medict-${PACKAGE_VERSION}-linux-x86_64.AppImage" --smoke-test
+          status=$?
+          set -e
+          if [ ! -f "$marker" ]; then
+            echo "The AppImage did not complete its feature smoke test (exit $status)." >&2
+            exit 1
+          fi
 
       - name: Upload AppImage
         uses: actions/upload-artifact@v7

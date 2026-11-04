@@ -67,6 +67,9 @@ Kirigami.ApplicationWindow {
 
     Component.onCompleted: {
         Controller.markUiReady();
+        if (Controller.smokeTest) {
+            console.info("Medict smoke test started");
+        }
         Controller.start();
     }
 
@@ -336,6 +339,7 @@ Kirigami.ApplicationWindow {
                     Qt.quit();
                     return;
                 }
+                console.info("Medict smoke: dictionaries ready");
                 Controller.lookup("part");
                 root.smokeStep = 1;
             } else if (root.smokeStep === 1) {
@@ -347,6 +351,7 @@ Kirigami.ApplicationWindow {
                     return;
                 }
                 root.smokeHasLookup = true;
+                console.info("Medict smoke: definition page loaded");
                 Controller.addBookmark();
                 root.smokeStep = 2;
             } else if (root.smokeStep === 2) {
@@ -355,30 +360,35 @@ Kirigami.ApplicationWindow {
                         || (root.state.bookmarks || []).length === 0) {
                     return;
                 }
+                console.info("Medict smoke: bookmark saved");
                 root.openSettings();
                 root.smokeStep = 3;
             } else if (root.smokeStep === 3) {
                 if (pageStack.layers.depth !== 1) {
                     return;
                 }
+                console.info("Medict smoke: settings opened");
                 root.openNotebooks();
                 root.smokeStep = 4;
             } else if (root.smokeStep === 4) {
                 if (pageStack.layers.depth !== 1) {
                     return;
                 }
+                console.info("Medict smoke: notebooks opened");
                 root.openCssEditor();
                 root.smokeStep = 5;
             } else if (root.smokeStep === 5) {
                 if (pageStack.layers.depth !== 1) {
                     return;
                 }
+                console.info("Medict smoke: CSS editor opened");
                 root.openAbout();
                 root.smokeStep = 6;
             } else if (root.smokeStep === 6) {
                 if (pageStack.layers.depth !== 1) {
                     return;
                 }
+                console.info("Medict smoke: about page opened");
                 root.closeLayers();
                 root.smokeStep = 7;
                 Controller.completeSmokeTest();
