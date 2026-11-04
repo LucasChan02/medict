@@ -40,6 +40,12 @@ Kirigami.AboutPage {
     getInvolvedUrl: ""
     donateUrl: ""
 
+    Component.onCompleted: {
+        if (Controller.smokeTest) {
+            console.info("Medict smoke: about page initialized");
+        }
+    }
+
     actions: [
         BreezeAction {
             text: qsTr("Close")

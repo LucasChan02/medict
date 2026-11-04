@@ -24,7 +24,12 @@ Kirigami.ScrollablePage {
         page.initialized = true;
     }
 
-    Component.onCompleted: page.loadSettings()
+    Component.onCompleted: {
+        if (Controller.smokeTest) {
+            console.info("Medict smoke: settings page initialized");
+        }
+        page.loadSettings();
+    }
 
     actions: [
         BreezeAction {

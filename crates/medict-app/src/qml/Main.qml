@@ -87,26 +87,50 @@ Kirigami.ApplicationWindow {
     }
 
     function openSettings(): void {
+        if (Controller.smokeTest) {
+            console.info("Medict smoke: opening settings page");
+        }
         closeLayers();
         pageStack.layers.push(settingsComponent);
+        if (Controller.smokeTest) {
+            console.info("Medict smoke: settings page pushed");
+        }
     }
 
     function openNotebooks(): void {
+        if (Controller.smokeTest) {
+            console.info("Medict smoke: opening notebooks page");
+        }
         closeLayers();
         Controller.loadNotebooks();
         pageStack.layers.push(notebooksComponent);
+        if (Controller.smokeTest) {
+            console.info("Medict smoke: notebooks page pushed");
+        }
     }
 
     function openCssEditor(): void {
+        if (Controller.smokeTest) {
+            console.info("Medict smoke: opening CSS editor page");
+        }
         closeLayers();
         previewCss = "";
         Controller.prepareCssEditor();
         pageStack.layers.push(cssEditorComponent);
+        if (Controller.smokeTest) {
+            console.info("Medict smoke: CSS editor page pushed");
+        }
     }
 
     function openAbout(): void {
+        if (Controller.smokeTest) {
+            console.info("Medict smoke: opening about page");
+        }
         closeLayers();
         pageStack.layers.push(aboutComponent);
+        if (Controller.smokeTest) {
+            console.info("Medict smoke: about page pushed");
+        }
     }
 
     function reloadDefinitions(): void {
@@ -361,34 +385,31 @@ Kirigami.ApplicationWindow {
                     return;
                 }
                 console.info("Medict smoke: bookmark saved");
-                root.openSettings();
+                root.openAbout();
                 root.smokeStep = 3;
             } else if (root.smokeStep === 3) {
                 if (pageStack.layers.depth !== 1) {
                     return;
                 }
-                console.info("Medict smoke: settings opened");
                 root.openNotebooks();
                 root.smokeStep = 4;
             } else if (root.smokeStep === 4) {
                 if (pageStack.layers.depth !== 1) {
                     return;
                 }
-                console.info("Medict smoke: notebooks opened");
                 root.openCssEditor();
                 root.smokeStep = 5;
             } else if (root.smokeStep === 5) {
                 if (pageStack.layers.depth !== 1) {
                     return;
                 }
-                console.info("Medict smoke: CSS editor opened");
-                root.openAbout();
+                root.openSettings();
                 root.smokeStep = 6;
             } else if (root.smokeStep === 6) {
                 if (pageStack.layers.depth !== 1) {
                     return;
                 }
-                console.info("Medict smoke: about page opened");
+                console.info("Medict smoke: settings page opened");
                 root.closeLayers();
                 root.smokeStep = 7;
                 Controller.completeSmokeTest();
