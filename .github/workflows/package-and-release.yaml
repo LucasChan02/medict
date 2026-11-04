@@ -243,21 +243,40 @@ jobs:
           $dist = Join-Path $PWD 'dist'
           New-Item -ItemType Directory -Force $dist | Out-Null
 
-          $sevenZip = Get-Command 7z -ErrorAction SilentlyContinue
-          if (-not $sevenZip) {
-            choco install 7zip --no-progress -y
-            $sevenZip = Get-Command 7z -ErrorAction SilentlyContinue
-          }
-          if (-not $sevenZip) {
-            $candidate = Join-Path $env:ProgramFiles '7-Zip\7z.exe'
+          $sevenZipPath = $null
+          $candidates = @(
+            (Join-Path $env:ProgramFiles '7-Zip\7z.exe'),
+            (Join-Path ${env:ProgramFiles(x86)} '7-Zip\7z.exe'),
+            (Join-Path $env:ChocolateyInstall 'lib\7zip\tools\7-Zip\7z.exe')
+          )
+          foreach ($candidate in $candidates) {
             if (Test-Path -LiteralPath $candidate) {
-              $sevenZip = Get-Item -LiteralPath $candidate
+              $sevenZipPath = $candidate
+              break
             }
           }
-          if (-not $sevenZip) {
+          if (-not $sevenZipPath) {
+            choco install 7zip --no-progress -y
+            $sevenZipCommand = Get-Command 7z -ErrorAction SilentlyContinue
+            if ($sevenZipCommand) {
+              $sevenZipPath = $sevenZipCommand.Source
+            }
+          }
+          if (-not $sevenZipPath) {
+            $candidate = Join-Path $env:ProgramFiles '7-Zip\7z.exe'
+            if (Test-Path -LiteralPath $candidate) {
+              $sevenZipPath = $candidate
+            }
+          }
+          if (-not $sevenZipPath) {
             throw '7-Zip was not found.'
           }
-          $sfx = Join-Path (Split-Path $sevenZip.Source) '7z.sfx'
+          $sfx = Join-Path (Split-Path $sevenZipPath) '7z.sfx'
+          if (-not (Test-Path -LiteralPath $sfx)) {
+            $sfx = Get-ChildItem -LiteralPath $env:ChocolateyInstall `
+              -Recurse -File -Filter '7z.sfx' |
+              Select-Object -First 1 -ExpandProperty FullName
+          }
           if (-not (Test-Path -LiteralPath $sfx)) {
             throw 'The 7-Zip SFX module was not found.'
           }
@@ -285,7 +304,7 @@ jobs:
           $portable = Join-Path $dist "Medict-$env:PACKAGE_VERSION-windows-x86_64.exe"
           Push-Location $portableStage
           try {
-            & $sevenZip.Source a -t7z -mx=9 "-sfx$sfx" $portable '*'
+            & $sevenZipPath a -t7z -mx=9 "-sfx$sfx" $portable '*'
           } finally {
             Pop-Location
           }
