@@ -262,15 +262,16 @@ jobs:
           Remove-Item -LiteralPath $portableStage -Recurse -Force -ErrorAction SilentlyContinue
           New-Item -ItemType Directory -Force $portableStage | Out-Null
           Copy-Item -Path (Join-Path $stage '*') -Destination $portableStage -Recurse
-          $config = @"
-;!@Install@!UTF-8!
-Title="Medict"
-RunProgram="Medict.exe"
-InstallPath="%TEMP%\\Medict-$env:PACKAGE_VERSION"
-OverwriteMode="2"
-GUIMode="2"
-;!@InstallEnd@!
-"@
+          $config = @(
+            ';!@Install@!UTF-8!'
+            'Title="Medict"'
+            'RunProgram="Medict.exe"'
+            "InstallPath=`"%TEMP%\\Medict-$env:PACKAGE_VERSION`""
+            'OverwriteMode="2"'
+            'GUIMode="2"'
+            ';!@InstallEnd@!'
+          ) -join "`n"
+          $config += "`n"
           [System.IO.File]::WriteAllText(
             (Join-Path $portableStage 'config.txt'),
             $config,
