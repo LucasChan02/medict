@@ -28,7 +28,7 @@ Kirigami.Page {
 
     function closeEditor(): void {
         applicationWindow().previewCss = "";
-        if (applicationWindow().pageStack.layers.depth > 0) {
+        if (applicationWindow().pageStack.layers.depth > 1) {
             applicationWindow().pageStack.layers.pop();
         }
         applicationWindow().reloadDefinitions();

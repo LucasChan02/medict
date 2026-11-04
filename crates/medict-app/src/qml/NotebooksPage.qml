@@ -42,7 +42,7 @@ Kirigami.Page {
         if (!bookmark || bookmark.word.length === 0) {
             return;
         }
-        if (applicationWindow().pageStack.layers.depth > 0) {
+        if (applicationWindow().pageStack.layers.depth > 1) {
             applicationWindow().pageStack.layers.pop();
         }
         Controller.activateBookmark(bookmark.word, bookmark.dictId);
