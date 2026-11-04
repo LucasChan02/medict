@@ -19,6 +19,7 @@ Kirigami.Page {
     readonly property int dictionaryCount: (appState.dictionaries || []).length
     property bool webEngineLoaded: false
     property var persistentProfile: null
+    property bool suspended: false
 
     title: appState.currentWord.length > 0
         ? appState.currentWord
@@ -28,6 +29,10 @@ Kirigami.Page {
     function focusSearch(): void {
         searchField.forceActiveFocus();
         searchField.selectAll();
+    }
+
+    function setSuspended(value): void {
+        page.suspended = value;
     }
 
     function queryParameter(urlText, name): string {
@@ -371,7 +376,8 @@ Kirigami.Page {
 
                         anchors.fill: parent
                         profile: persistentProfile
-                        visible: definitionContainer.modelData.hasEntry
+                        visible: !page.suspended
+                            && definitionContainer.modelData.hasEntry
                         url: definitionContainer.modelData.hasEntry
                             ? definitionContainer.modelData.url
                             : ""

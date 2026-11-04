@@ -79,6 +79,14 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    function pushLayer(component): void {
+        const lookupPage = pageStack.currentItem;
+        if (lookupPage && lookupPage.setSuspended) {
+            lookupPage.setSuspended(true);
+        }
+        pageStack.layers.push(component);
+    }
+
     function focusLookup(): void {
         closeLayers();
         if (pageStack.currentItem && pageStack.currentItem.focusSearch) {
@@ -91,7 +99,7 @@ Kirigami.ApplicationWindow {
             console.info("Medict smoke: opening settings page");
         }
         closeLayers();
-        pageStack.layers.push(settingsComponent);
+        pushLayer(settingsComponent);
         if (Controller.smokeTest) {
             console.info("Medict smoke: settings page pushed");
         }
@@ -103,7 +111,7 @@ Kirigami.ApplicationWindow {
         }
         closeLayers();
         Controller.loadNotebooks();
-        pageStack.layers.push(notebooksComponent);
+        pushLayer(notebooksComponent);
         if (Controller.smokeTest) {
             console.info("Medict smoke: notebooks page pushed");
         }
@@ -116,7 +124,7 @@ Kirigami.ApplicationWindow {
         closeLayers();
         previewCss = "";
         Controller.prepareCssEditor();
-        pageStack.layers.push(cssEditorComponent);
+        pushLayer(cssEditorComponent);
         if (Controller.smokeTest) {
             console.info("Medict smoke: CSS editor page pushed");
         }
@@ -127,7 +135,7 @@ Kirigami.ApplicationWindow {
             console.info("Medict smoke: opening about page");
         }
         closeLayers();
-        pageStack.layers.push(aboutComponent);
+        pushLayer(aboutComponent);
         if (Controller.smokeTest) {
             console.info("Medict smoke: about page pushed");
         }
@@ -317,6 +325,26 @@ Kirigami.ApplicationWindow {
     }
 
     pageStack.initialPage: LookupPage {}
+
+    pageStack.layers.pushEnter: Transition {}
+    pageStack.layers.pushExit: Transition {}
+    pageStack.layers.popEnter: Transition {}
+    pageStack.layers.popExit: Transition {}
+    pageStack.layers.replaceEnter: Transition {}
+    pageStack.layers.replaceExit: Transition {}
+
+    Connections {
+        target: pageStack.layers
+
+        function onDepthChanged(): void {
+            if (pageStack.layers.depth === 0) {
+                const lookupPage = pageStack.currentItem;
+                if (lookupPage && lookupPage.setSuspended) {
+                    lookupPage.setSuspended(false);
+                }
+            }
+        }
+    }
 
     Component {
         id: settingsComponent
