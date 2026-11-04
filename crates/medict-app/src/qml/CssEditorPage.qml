@@ -10,6 +10,7 @@ import medict_app
 Kirigami.Page {
     id: page
 
+    readonly property var appWindow: applicationWindow()
     readonly property var appState: applicationWindow().state
 
     property bool dirty: false
@@ -27,11 +28,11 @@ Kirigami.Page {
     }
 
     function closeEditor(): void {
-        applicationWindow().previewCss = "";
-        if (applicationWindow().pageStack.layers.depth > 1) {
-            applicationWindow().pageStack.layers.pop();
+        page.appWindow.previewCss = "";
+        if (page.appWindow.pageStack.layers.depth > 1) {
+            page.appWindow.pageStack.layers.pop();
         }
-        applicationWindow().reloadDefinitions();
+        page.appWindow.reloadDefinitions();
     }
 
     Component.onCompleted: {
@@ -40,8 +41,8 @@ Kirigami.Page {
     }
 
     Component.onDestruction: {
-        applicationWindow().previewCss = "";
-        applicationWindow().reloadDefinitions();
+        page.appWindow.previewCss = "";
+        page.appWindow.reloadDefinitions();
     }
 
     actions: [

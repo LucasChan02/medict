@@ -22,7 +22,10 @@ Kirigami.AboutPage {
         "authors": [
             {
                 "name": qsTr("Medict contributors"),
-                "task": qsTr("Development")
+                "task": qsTr("Development"),
+                "webAddress": "",
+                "ocsUsername": "",
+                "emailAddress": ""
             }
         ],
         "credits": [],

@@ -296,20 +296,39 @@ jobs:
             ';!@InstallEnd@!'
           ) -join "`n"
           $config += "`n"
+          $configPath = Join-Path $PWD 'portable-config.txt'
           [System.IO.File]::WriteAllText(
-            (Join-Path $portableStage 'config.txt'),
+            $configPath,
             $config,
             [System.Text.UTF8Encoding]::new($false)
           )
           $portable = Join-Path $dist "Medict-$env:PACKAGE_VERSION-windows-x86_64.exe"
+          $payload = Join-Path $dist "Medict-$env:PACKAGE_VERSION-windows-x86_64.7z"
           Push-Location $portableStage
           try {
-            & $sevenZipPath a -t7z -mx=9 "-sfx$sfx" $portable '*'
+            & $sevenZipPath a -t7z -mx=9 $payload '*'
           } finally {
             Pop-Location
           }
           if ($LASTEXITCODE -ne 0) {
             throw 'Portable EXE packaging failed.'
+          }
+          $output = [System.IO.File]::Create($portable)
+          try {
+            foreach ($source in @($sfx, $configPath, $payload)) {
+              $input = [System.IO.File]::OpenRead($source)
+              try {
+                $input.CopyTo($output)
+              } finally {
+                $input.Dispose()
+              }
+            }
+          } finally {
+            $output.Dispose()
+          }
+          Remove-Item -LiteralPath $payload, $configPath -Force
+          if (-not (Test-Path -LiteralPath $portable)) {
+            throw 'Portable EXE packaging did not create an output file.'
           }
 
       - name: Smoke test portable EXE
@@ -347,6 +366,7 @@ jobs:
           }
 
       - name: Upload portable EXE
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: Medict-windows-x86_64
