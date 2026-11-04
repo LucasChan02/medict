@@ -225,6 +225,7 @@ Kirigami.Page {
     }
 
     Component.onCompleted: {
+        persistentProfile = persistentProfilePrototype.instance();
         searchField.text = appState.currentWord;
         Qt.callLater(page.focusSearch);
     }
@@ -479,10 +480,6 @@ Kirigami.Page {
         id: persistentProfilePrototype
 
         storageName: "Medict"
-    }
-
-    Component.onCompleted: {
-        persistentProfile = persistentProfilePrototype.instance();
     }
 
     Connections {
