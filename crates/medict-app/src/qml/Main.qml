@@ -84,7 +84,13 @@ Kirigami.ApplicationWindow {
         if (lookupPage && lookupPage.setSuspended) {
             lookupPage.setSuspended(true);
         }
+        if (Controller.smokeTest) {
+            console.info("Medict smoke: pushing layer");
+        }
         pageStack.layers.push(component);
+        if (Controller.smokeTest) {
+            console.info("Medict smoke: layer push returned", pageStack.layers.depth);
+        }
     }
 
     function focusLookup(): void {
@@ -366,6 +372,17 @@ Kirigami.ApplicationWindow {
         AboutPage {}
     }
 
+    Component {
+        id: smokeProbeComponent
+        Item {
+            Component.onCompleted: {
+                if (Controller.smokeTest) {
+                    console.info("Medict smoke: probe page initialized");
+                }
+            }
+        }
+    }
+
     Timer {
         id: smokeTimer
 
@@ -413,33 +430,40 @@ Kirigami.ApplicationWindow {
                     return;
                 }
                 console.info("Medict smoke: bookmark saved");
-                root.openAbout();
+                root.pushLayer(root.smokeProbeComponent);
                 root.smokeStep = 3;
             } else if (root.smokeStep === 3) {
                 if (pageStack.layers.depth !== 1) {
                     return;
                 }
-                root.openNotebooks();
+                console.info("Medict smoke: probe page opened");
+                root.openAbout();
                 root.smokeStep = 4;
             } else if (root.smokeStep === 4) {
                 if (pageStack.layers.depth !== 1) {
                     return;
                 }
-                root.openCssEditor();
+                root.openNotebooks();
                 root.smokeStep = 5;
             } else if (root.smokeStep === 5) {
                 if (pageStack.layers.depth !== 1) {
                     return;
                 }
-                root.openSettings();
+                root.openCssEditor();
                 root.smokeStep = 6;
             } else if (root.smokeStep === 6) {
                 if (pageStack.layers.depth !== 1) {
                     return;
                 }
+                root.openSettings();
+                root.smokeStep = 7;
+            } else if (root.smokeStep === 7) {
+                if (pageStack.layers.depth !== 1) {
+                    return;
+                }
                 console.info("Medict smoke: settings page opened");
                 root.closeLayers();
-                root.smokeStep = 7;
+                root.smokeStep = 8;
                 Controller.completeSmokeTest();
                 smokeTimer.stop();
                 Qt.quit();
